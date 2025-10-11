@@ -127,7 +127,7 @@ async def _broadcast(
 
 def _reschedule_backup_job(application: Application, time_str: str) -> None:
     hour, minute = map(int, time_str.split(":"))
-    tzinfo = application.defaults.tzinfo or ZoneInfo("UTC")
+    tzinfo = application.bot_data.get("tzinfo") or ZoneInfo("UTC")
     time_obj = dt.time(hour=hour, minute=minute, tzinfo=tzinfo)
     existing = application.bot_data.get("backup_job")
     if existing:
@@ -144,6 +144,7 @@ def build_application(settings: Settings) -> Application:
     application = Application.builder().token(settings.bot_token).defaults(defaults).build()
 
     application.bot_data["settings"] = settings
+    application.bot_data["tzinfo"] = tzinfo
     application.bot_data["health_monitor"] = HealthMonitor(settings.thresholds)
     application.bot_data["reschedule_backup_job"] = lambda value: _reschedule_backup_job(
         application, value

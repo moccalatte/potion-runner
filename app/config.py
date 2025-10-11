@@ -77,8 +77,10 @@ def _load_raw_env(env_path: Path) -> dict[str, str]:
     return env
 
 
-def _normalize_schedule(raw: str, default: str = "02:30") -> str:
-    candidate = raw.strip()
+def _normalize_schedule(raw: str | None, default: str = "02:30") -> str:
+    if raw is None:
+        return default
+    candidate = str(raw).strip()
     if not candidate:
         return default
     candidate = candidate.replace(".", ":")
