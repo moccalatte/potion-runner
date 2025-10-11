@@ -64,7 +64,7 @@ python3 -m venv /opt/potion-runner/venv
 /opt/potion-runner/venv/bin/pip install --upgrade pip
 /opt/potion-runner/venv/bin/pip install -r /opt/potion-runner/requirements.lock
 ```
-Perintah di atas memasang `python-telegram-bot` dengan ekstra `job-queue`, sehingga APScheduler tersedia dan fitur JobQueue PTB aktif.
+Perintah di atas memasang `python-telegram-bot` dengan ekstra `job-queue`, sehingga APScheduler tersedia dan fitur JobQueue PTB aktif. Jadwal backup pada `.env` gunakan format `HH:MM` (mis. `02:30`); tanda titik otomatis diubah menjadi titik dua.
 
 ## 7. Konfigurasi `.env`
 ```bash

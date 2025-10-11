@@ -41,12 +41,13 @@ async def set_backup_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not context.args:
         await update.message.reply_text("Gunakan /set_backup HH:MM")
         return
-    value = context.args[0]
+    raw_value = context.args[0].replace(".", ":")
     try:
-        dt.datetime.strptime(value, "%H:%M")
+        parsed = dt.datetime.strptime(raw_value, "%H:%M")
     except ValueError:
         await update.message.reply_text("Format salah. Gunakan HH:MM (24 jam).")
         return
+    value = parsed.strftime("%H:%M")
     context.bot_data["backup_schedule"] = value
     reschedule = context.bot_data.get("reschedule_backup_job")
     if callable(reschedule):

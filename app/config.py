@@ -77,6 +77,24 @@ def _load_raw_env(env_path: Path) -> dict[str, str]:
     return env
 
 
+def _normalize_schedule(raw: str, default: str = "02:30") -> str:
+    candidate = raw.strip()
+    if not candidate:
+        return default
+    candidate = candidate.replace(".", ":")
+    parts = candidate.split(":")
+    if len(parts) != 2:
+        return default
+    try:
+        hour = int(parts[0])
+        minute = int(parts[1])
+    except ValueError:
+        return default
+    if not (0 <= hour < 24 and 0 <= minute < 60):
+        return default
+    return f"{hour:02d}:{minute:02d}"
+
+
 def load_settings(env_path: Path | None = None) -> Settings:
     """Load configuration from ``.env`` and environment variables."""
 
@@ -123,6 +141,7 @@ def load_settings(env_path: Path | None = None) -> Settings:
 
     services_whitelist = _parse_services(raw_env.get("SERVICES_WHITELIST", ""))
 
+    backup_schedule = _normalize_schedule(raw_env.get("BACKUP_SCHEDULE", "02:30"))
     settings = Settings(
         bot_token=bot_token,
         admin_ids=admin_ids,
@@ -137,7 +156,7 @@ def load_settings(env_path: Path | None = None) -> Settings:
         actions_log=actions_log,
         health_file=health_file,
         ping_host=raw_env.get("PING_HOST", "1.1.1.1"),
-        backup_schedule=raw_env.get("BACKUP_SCHEDULE", "02:30"),
+        backup_schedule=backup_schedule,
         timezone=raw_env.get("TIMEZONE", "Asia/Jakarta"),
         thresholds=thresholds,
     )

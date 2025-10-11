@@ -42,7 +42,7 @@ Ikuti panduan langkah demi langkah pada [`docs/install.md`](docs/install.md). Fi
 source /opt/potion-runner/venv/bin/activate
 python -m app.bot
 ```
-Pastikan `.env` berisi `BOT_TOKEN` dan `ADMIN_IDS` minimal satu ID admin. Dependensi `python-telegram-bot` dipasang dengan ekstra `job-queue`, sehingga APScheduler tersedia untuk JobQueue internal.
+Pastikan `.env` berisi `BOT_TOKEN` dan `ADMIN_IDS` minimal satu ID admin. Dependensi `python-telegram-bot` dipasang dengan ekstra `job-queue`, sehingga APScheduler tersedia untuk JobQueue internal. Format jadwal backup gunakan `HH:MM` (koma/ titik otomatis dikonversi).
 
 ## Menu & Perintah Penting
 - `/start`, tombol ReplyKeyboard utama.
