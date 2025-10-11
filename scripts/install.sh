@@ -15,6 +15,7 @@ rsync -a --delete ./ "$APP_DIR"/
 python3 -m venv "$APP_DIR/venv"
 "$APP_DIR/venv/bin/pip" install --upgrade pip
 "$APP_DIR/venv/bin/pip" install -r "$APP_DIR/requirements.lock"
+echo "Dependensi python-telegram-bot terpasang dengan ekstra job-queue (APScheduler aktif)."
 
 install -m 600 /dev/null "$APP_DIR/.env"
 cat ./.env.example > "$APP_DIR/.env"

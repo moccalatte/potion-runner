@@ -200,6 +200,10 @@ async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 def schedule_health_jobs(application: Application) -> None:
+    if application.job_queue is None:
+        raise RuntimeError(
+            "JobQueue tidak tersedia. Pastikan python-telegram-bot dipasang dengan ekstra 'job-queue'."
+        )
     application.job_queue.run_repeating(health_check_job, interval=60, first=10)
     backup_time = application.bot_data.get("backup_schedule")
     if backup_time:
