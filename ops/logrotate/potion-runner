@@ -1,0 +1,9 @@
+/opt/potion-runner/logs/*.log {
+    daily
+    rotate 10
+    size 10M
+    missingok
+    compress
+    delaycompress
+    copytruncate
+}

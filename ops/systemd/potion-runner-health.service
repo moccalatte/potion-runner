@@ -1,0 +1,9 @@
+[Unit]
+Description=Potion Runner Health Snapshot
+Wants=potion-runner.service
+
+[Service]
+Type=oneshot
+User=dre
+WorkingDirectory=/opt/potion-runner
+ExecStart=/opt/potion-runner/venv/bin/python /opt/potion-runner/scripts/health_ping.py

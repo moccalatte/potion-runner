@@ -1,0 +1,11 @@
+[Unit]
+Description=Potion Runner Health Snapshot Timer (5m)
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+Persistent=true
+Unit=potion-runner-health.service
+
+[Install]
+WantedBy=timers.target

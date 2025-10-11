@@ -1,0 +1,10 @@
+[Unit]
+Description=Potion Runner Backup Snapshot
+Wants=potion-runner.service
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=dre
+WorkingDirectory=/opt/potion-runner
+ExecStart=/opt/potion-runner/venv/bin/python /opt/potion-runner/scripts/backup_once.py
