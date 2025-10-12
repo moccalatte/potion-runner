@@ -1,6 +1,7 @@
 """Potion Runner Bot entry point."""
 from __future__ import annotations
 
+import atexit
 import datetime as dt
 import fcntl
 import os
@@ -44,6 +45,7 @@ from .utils.format import human_datetime
 from .utils.logging import get_logger, log_action, setup_logging
 
 logger = get_logger(__name__)
+_PROCESS_LOCK_FD: int | None = None
 _PROCESS_LOCK_FD: int | None = None
 
 
@@ -264,3 +266,15 @@ def _acquire_process_lock(path: Path) -> None:
             "Instance bot lain masih berjalan. Matikan proses sebelumnya sebelum menjalankan ulang."
         ) from exc
     _PROCESS_LOCK_FD = fd
+    atexit.register(_release_process_lock)
+
+
+def _release_process_lock() -> None:
+    global _PROCESS_LOCK_FD
+    if _PROCESS_LOCK_FD is None:
+        return
+    try:
+        fcntl.flock(_PROCESS_LOCK_FD, fcntl.LOCK_UN)
+    finally:
+        os.close(_PROCESS_LOCK_FD)
+        _PROCESS_LOCK_FD = None
