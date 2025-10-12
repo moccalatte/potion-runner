@@ -243,7 +243,8 @@ def _acquire_process_lock(path: Path) -> None:
     global _PROCESS_LOCK_FD
     if _PROCESS_LOCK_FD is not None:
         return
-    fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_TRUNC, 0o600)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError as exc:  # pragma: no cover - file lock is platform specific
@@ -251,11 +252,13 @@ def _acquire_process_lock(path: Path) -> None:
         raise RuntimeError(
             "Instance bot lain masih berjalan. Matikan proses sebelumnya sebelum menjalankan ulang."
         ) from exc
+    os.write(fd, f"{os.getpid()}\n".encode())
+    os.fsync(fd)
     _PROCESS_LOCK_FD = fd
-    atexit.register(_release_process_lock)
+    atexit.register(_release_process_lock, path)
 
 
-def _release_process_lock() -> None:
+def _release_process_lock(path: Path | None = None) -> None:
     global _PROCESS_LOCK_FD
     if _PROCESS_LOCK_FD is None:
         return
@@ -264,6 +267,11 @@ def _release_process_lock() -> None:
     finally:
         os.close(_PROCESS_LOCK_FD)
         _PROCESS_LOCK_FD = None
+        if path is not None:
+            try:
+                os.unlink(path)
+            except FileNotFoundError:
+                pass
 
 
 def main() -> None:
