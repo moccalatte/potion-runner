@@ -67,9 +67,19 @@ async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 f"{action} {service} lagi dijalankan. Bot bakal offline sebentar trus balik lagi."
             )
         )
-        context.application.create_task(
-            _run_self_control(context, settings, service, action, update.effective_chat.id, user_id)
+        task = asyncio.create_task(
+            _run_self_control(
+                context,
+                settings,
+                service,
+                action,
+                update.effective_chat.id,
+                user_id,
+            )
         )
+        context.application.chat_data.setdefault(update.effective_chat.id, {})[
+            "self_restart_task"
+        ] = task
         return
 
     await _run_control_with_feedback(

@@ -130,7 +130,8 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     err = context.error
     if isinstance(err, Conflict):
         logger.warning("Telegram API conflict (kemungkinan bot sedang direstart)." )
-        await context.application.stop()
+        if context.application.running:
+            await context.application.stop()
         return
     logger.error("Unhandled error processing update: %s", update, exc_info=err)
 
