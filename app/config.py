@@ -33,6 +33,7 @@ class Settings:
     snapshots_dir: Path
     hdd_mount: Path
     services_whitelist: List[str]
+    self_service: str
     runtime_log: Path
     actions_log: Path
     health_file: Path
@@ -142,6 +143,7 @@ def load_settings(env_path: Path | None = None) -> Settings:
         raise RuntimeError("ADMIN_IDS is required with at least one Telegram user id.")
 
     services_whitelist = _parse_services(raw_env.get("SERVICES_WHITELIST", ""))
+    self_service = raw_env.get("SELF_SERVICE", "potion-runner.service").strip()
 
     backup_schedule = _normalize_schedule(raw_env.get("BACKUP_SCHEDULE", "02:30"))
     settings = Settings(
@@ -154,6 +156,7 @@ def load_settings(env_path: Path | None = None) -> Settings:
         snapshots_dir=snapshots_dir,
         hdd_mount=Path(raw_env.get("HDD_MOUNT", "/mnt/potion-data")),
         services_whitelist=services_whitelist,
+        self_service=self_service,
         runtime_log=runtime_log,
         actions_log=actions_log,
         health_file=health_file,

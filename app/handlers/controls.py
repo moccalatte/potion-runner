@@ -1,6 +1,7 @@
 """Service control handlers."""
 from __future__ import annotations
 
+import asyncio
 from html import escape
 
 from telegram import Update
@@ -60,10 +61,39 @@ async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         log_action("controls.status", user_id=user_id, result="ok", detail=service)
         return
 
+    if action in {"restart", "stop"} and service == settings.self_service:
+        await pending.edit_text(
+            wrap_success(
+                f"{action} {service} lagi dijalankan. Bot bakal offline sebentar trus balik lagi."
+            )
+        )
+        context.application.create_task(
+            _run_self_control(context, settings, service, action, update.effective_chat.id, user_id)
+        )
+        return
+
+    await _run_control_with_feedback(
+        context,
+        settings,
+        service,
+        action,
+        pending,
+        user_id,
+    )
+
+
+async def _run_control_with_feedback(
+    context: ContextTypes.DEFAULT_TYPE,
+    settings: Settings,
+    service: str,
+    action: str,
+    pending_message,
+    user_id: int,
+) -> None:
     try:
         result = await control_service(settings, service, action)
     except ValueError as exc:
-        await pending.edit_text(wrap_failure(str(exc)))
+        await pending_message.edit_text(wrap_failure(str(exc)))
         log_action(f"controls.{action}", user_id=user_id, result="fail", detail=str(exc))
         return
     except ShellCommandError as exc:
@@ -71,7 +101,7 @@ async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             "Gagal jalanin systemctl karena butuh sudo tanpa password. "
             "Tambahkan rule sudoers agar command ini boleh jalan otomatis."
         )
-        await pending.edit_text(wrap_failure(exc.stderr or hint))
+        await pending_message.edit_text(wrap_failure(exc.stderr or hint))
         log_action(
             f"controls.{action}",
             user_id=user_id,
@@ -82,7 +112,7 @@ async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     if result.returncode == 0:
         message = wrap_success(f"{action} {service} sukses.")
-        await pending.edit_text(message)
+        await pending_message.edit_text(message)
         log_action(
             f"controls.{action}",
             user_id=user_id,
@@ -91,13 +121,47 @@ async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
     else:
         message = wrap_failure(result.stderr or "systemctl gagal")
-        await pending.edit_text(message)
+        await pending_message.edit_text(message)
         log_action(
             f"controls.{action}",
             user_id=user_id,
             result="fail",
             detail=result.stderr,
         )
+
+
+async def _run_self_control(
+    context: ContextTypes.DEFAULT_TYPE,
+    settings: Settings,
+    service: str,
+    action: str,
+    chat_id: int,
+    user_id: int,
+) -> None:
+    await asyncio.sleep(1)
+    try:
+        await control_service(settings, service, action)
+        log_action(
+            f"controls.{action}",
+            user_id=user_id,
+            result="ok",
+            detail="self-service restart",
+        )
+    except ShellCommandError as exc:
+        hint = (
+            "Gagal jalanin systemctl karena butuh sudo tanpa password. "
+            "Tambahkan rule sudoers agar command ini boleh jalan otomatis."
+        )
+        await context.bot.send_message(chat_id=chat_id, text=wrap_failure(exc.stderr or hint))
+        log_action(
+            f"controls.{action}",
+            user_id=user_id,
+            result="fail",
+            detail=f"{exc.stderr or exc.stdout}",
+        )
+    except ValueError as exc:
+        await context.bot.send_message(chat_id=chat_id, text=wrap_failure(str(exc)))
+        log_action(f"controls.{action}", user_id=user_id, result="fail", detail=str(exc))
 
 
 __all__ = ["control_menu", "service_command"]

@@ -14,6 +14,7 @@
 - `apt_update` menjalankan `sudo` non-interaktif; diperlukan konfigurasi sudoers agar tidak diminta password.
 - Backup rsync mengecualikan direktori/berkas di luar daftar default; tambahkan manual jika ada data lain yang perlu dicadangkan.
 - Health timer & backup timer mengandalkan systemd + script CLI; pastikan path `/opt/potion-runner` konsisten dengan deploy asli.
+- Restart service via bot akan memutus sesi polling sejenak; pastikan tidak ada instance bot lain yang masih jalan supaya tidak kena konflik 409.
 
 ## Ambiguitas / Hal Perlu Konfirmasi
 - Daftar layanan whitelist di `.env` perlu disesuaikan secara manual; belum ada menu untuk menambah/menghapus.

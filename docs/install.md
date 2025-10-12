@@ -71,7 +71,7 @@ Perintah di atas memasang `python-telegram-bot` dengan ekstra `job-queue`, sehin
 install -m 600 /dev/null /opt/potion-runner/.env
 nano /opt/potion-runner/.env
 ```
-Isi berdasarkan `.env.example` (token bot, admin ID, path, whitelist service).
+Isi berdasarkan `.env.example` (token bot, admin ID, path, whitelist service). Jika unit bot-nya bukan `potion-runner.service`, sesuaikan variabel `SELF_SERVICE` agar tombol kontrol tahu unit mana yang harus direstart.
 
 ## 8. Logrotate
 Salin file template:

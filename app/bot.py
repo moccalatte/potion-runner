@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from telegram import Update
 from telegram.constants import ParseMode
+from telegram.error import Conflict
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -126,7 +127,12 @@ async def _broadcast(
 
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.error("Unhandled error processing update: %s", update, exc_info=context.error)
+    err = context.error
+    if isinstance(err, Conflict):
+        logger.warning("Telegram API conflict (kemungkinan bot sedang direstart)." )
+        await context.application.stop()
+        return
+    logger.error("Unhandled error processing update: %s", update, exc_info=err)
 
 
 def _reschedule_backup_job(application: Application, time_str: str) -> None:

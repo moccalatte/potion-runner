@@ -137,6 +137,7 @@ LOG_DIR="/opt/potion-runner/logs"
 BACKUP_DIR="/opt/potion-runner/backups"
 HDD_MOUNT="/mnt/potion-data"     # target mount hdd
 SERVICES_WHITELIST="potion-runner.service,cloudflared.service,n8n.service"
+SELF_SERVICE="potion-runner.service"      # unit bot sendiri buat restart otomatis
 ```
 
 > Keamanan: `.env` permission 600, owner `dre:dre`.
@@ -156,8 +157,8 @@ SERVICES_WHITELIST="potion-runner.service,cloudflared.service,n8n.service"
 **Contoh gaya bahasa**
 - Saat proses: *"Oke, lagi aku cek dulu server kamu. Sabar sebentar ya ⚙️"*
 - Setelah proses:
-  - **Sukses**: *“Sudah siap nih! ✅ Info singkat: …”*
-  - **Gagal**: *“Hmm, ada kendala nih ❌. Rangkuman error: … Coba lagi ya.”*
+  - **Sukses**: *"Beres! ✅ Ringkasan: …"*
+  - **Gagal**: *"Kenapa ya... ❌ Ada error: … Coba lagi bentar lagi ya."*
 
 **Flows Ringkas**
 - **📊 Status** → ringkas (CPU, RAM, Disk root + HDD, Suhu, Uptime, Services ringkasan) + tombol **Detail**.

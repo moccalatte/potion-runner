@@ -39,6 +39,7 @@ Ikuti panduan langkah demi langkah pada [`docs/install.md`](docs/install.md). Fi
 4. Penempatan kode ke `/opt/potion-runner/`.
 5. Konfigurasi `.env`, logrotate, dan systemd service+timer.
 6. Konfigurasi sudoers agar `dre` bisa jalankan `systemctl start/stop/restart` untuk layanan whitelist tanpa password.
+7. (Opsional) Atur `SELF_SERVICE` di `.env` kalau nama unit bot berbeda dari `potion-runner.service`.
 
 ## Menjalankan Bot Secara Manual
 ```bash
@@ -46,6 +47,7 @@ source /opt/potion-runner/venv/bin/activate
 python -m app.bot
 ```
 Pastikan `.env` berisi `BOT_TOKEN` dan `ADMIN_IDS` minimal satu ID admin. Dependensi `python-telegram-bot` dipasang dengan ekstra `job-queue`, sehingga APScheduler tersedia untuk JobQueue internal. Format jadwal backup gunakan `HH:MM` (koma/ titik otomatis dikonversi).
+Jika service systemd sudah aktif, hindari menjalankan `python -m app.bot` secara bersamaan karena Telegram hanya menerima satu koneksi polling.
 
 ## Menu & Perintah Penting
 - `/start`, tombol ReplyKeyboard utama.
