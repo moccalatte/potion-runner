@@ -2,7 +2,7 @@
 Description=Potion Runner Backup Timer (02:30)
 
 [Timer]
-OnCalendar=*-*-* 00:00:00
+OnCalendar=*-*-* 02:30:00
 Persistent=true
 Unit=potion-runner-backup.service
 

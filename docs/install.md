@@ -11,8 +11,8 @@ Menjamin paket terbaru dan keamanan.
 ## 2. Pasang Paket Wajib
 ```bash
 sudo apt install -y python3-venv python3-pip git rsync lm-sensors acl
-# Opsional: smartctl & tailscale
-sudo apt install -y smartmontools tailscale
+# Opsional: smartctl, tailscale, speedtest-cli
+sudo apt install -y smartmontools tailscale speedtest-cli
 ```
 - `venv/pip` untuk lingkungan Python.
 - `rsync` untuk backup incremental.
@@ -43,13 +43,19 @@ sudo apt install -y smartmontools tailscale
    df -h
    ```
 
-## 4. Salin Kode ke `/opt/potion-runner`
+## 4. Salin Kode ke APP_DIR (default `/opt/potion-runner`)
 ```bash
-sudo mkdir -p /opt/potion-runner
-sudo chown -R dre:dre /opt/potion-runner
-rsync -a --delete ./ /opt/potion-runner/
+export APP_DIR=/opt/potion-runner
+sudo mkdir -p "$APP_DIR"
+sudo chown -R "$USER:$USER" "$APP_DIR"
+rsync -a --delete --exclude ".git" ./ "$APP_DIR"/
 ```
-(Rsync di atas diasumsikan dijalankan dari repo lokal ini.)
+(Ubah `APP_DIR` bila ingin menaruh bot di lokasi berbeda. `SERVICE_USER` dapat di-set sebelum menjalankan `scripts/install.sh` bila ingin unit systemd dijalankan oleh user selain `$USER`.)
+
+Atau jalankan skrip otomatis berikut (menghormati `APP_DIR` dan `SERVICE_USER` bila diset):
+```bash
+APP_DIR=/opt/potion-runner SERVICE_USER=dre ./scripts/install.sh
+```
 
 ## 5. Opsional: Symlink Logs & Backup ke HDD
 ```bash
@@ -72,6 +78,8 @@ install -m 600 /dev/null /opt/potion-runner/.env
 nano /opt/potion-runner/.env
 ```
 Isi berdasarkan `.env.example` (token bot, admin ID, path, whitelist service). Jika unit bot-nya bukan `potion-runner.service`, sesuaikan variabel `SELF_SERVICE` agar tombol kontrol tahu unit mana yang harus direstart.
+
+Tambahkan `BACKUP_INCLUDE` bila ada direktori/file ekstra yang ingin dicadangkan, dan pastikan `BACKUP_SCHEDULE` memakai format `HH:MM` (mis. `02:30`).
 
 ## 8. Logrotate
 Salin file template:
@@ -99,13 +107,20 @@ systemctl status potion-runner
 journalctl -u potion-runner -f
 ```
 
+Jika jadwal backup diubah dari bot (`/set_backup`), jalankan:
+```bash
+sudo /opt/potion-runner/scripts/update_timer.py --time HH:MM
+```
+ganti `HH:MM` dengan jadwal baru agar timer systemd ikut sinkron.
+
 ### 9a. Sudoers untuk Kontrol Service via Bot
 Agar perintah `/svc start|stop|restart` berjalan tanpa prompt password, tambahkan file sudoers khusus:
 
 ```bash
-echo 'dre ALL=(root) NOPASSWD: /usr/bin/systemctl start potion-runner.service, \
+SERVICE_USER=dre
+echo "$SERVICE_USER ALL=(root) NOPASSWD: /usr/bin/systemctl start potion-runner.service, \
     /usr/bin/systemctl stop potion-runner.service, \
-    /usr/bin/systemctl restart potion-runner.service' | sudo tee /etc/sudoers.d/potion-runner
+    /usr/bin/systemctl restart potion-runner.service" | sudo tee /etc/sudoers.d/potion-runner
 sudo chmod 440 /etc/sudoers.d/potion-runner
 ```
 

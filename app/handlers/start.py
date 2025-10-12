@@ -29,8 +29,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     text = (
         "Aku bantu pantau resource, cek log, sampai restart service.\n"
         "Semua fitur ada di tombol bawah layar.\n"
-        "Shortcut: /status untuk snapshot cepat, /backup buat langsung backup, "
-        "/services lihat whitelist yang boleh dikontrol."
+        "Shortcut: /status untuk snapshot cepat, /backup_now buat langsung backup, "
+        "/svc_list lihat whitelist yang boleh dikontrol."
     )
     await update.message.reply_text(text, reply_markup=MAIN_MENU)
     log_action("help", user_id=update.effective_user.id, result="ok", detail="/help")

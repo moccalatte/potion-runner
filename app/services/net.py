@@ -75,13 +75,7 @@ async def speed_quick() -> str:
                 pass
         return result.stdout or result.stderr or "Speedtest tidak memberikan hasil."
 
-    if shutil.which("fast"):
-        result = await run_cmd(("fast", "--upload"), check=False)
-        return result.stdout or result.stderr
-
-    return (
-        "Tidak ada utilitas speedtest. Install 'speedtest-cli' atau 'fast-cli' untuk fitur ini."
-    )
+    return "Tidak ada utilitas speedtest. Install paket resmi 'speedtest-cli' dulu ya."
 
 
 async def default_gateway() -> str:

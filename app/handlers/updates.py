@@ -30,6 +30,14 @@ async def apt_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         await update.message.reply_text("Akses ini khusus admin ya, minta izin dulu kalau perlu.")
         return
     pending = await update.message.reply_text(PROCESSING)
+    sudo_check = await run_cmd(("sudo", "-n", "true"), check=False)
+    if sudo_check.returncode != 0:
+        hint = (
+            "Belum ada izin sudo tanpa password untuk apt update. Tambahkan rule sudoers dulu ya."
+        )
+        await pending.edit_text(wrap_failure(hint))
+        log_action("updates.apt", user_id=user_id, result="deny", detail=sudo_check.stderr)
+        return
     result = await run_cmd(
         (
             "bash",

@@ -7,8 +7,9 @@ Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengont
 - **Kontrol aman**: start/stop/restart service systemd, update apt/pip/git dengan konfirmasi, audit log aksi.
 - **Manajemen log**: tail runtime, grep error, kirim file log, akses journalctl service.
 - **Backup rsync**: snapshot harian ke HDD `/mnt/potion-data`, manifest checksum, verifikasi.
-- **Network tools**: info IP, ping host favorit, status Tailscale, speed test (opsional).
+- **Network tools**: info IP, ping host favorit, status Tailscale, speed test berbasis `speedtest-cli` (opsional).
 - **Alert & watchdog**: deteksi CPU/RAM/Disk/Suhu/Service fail dengan hysteresis, tulis `last_health.json`, kirim notifikasi ke admin.
+- **Pengaturan dinamis**: jadwal backup, threshold alert, dan whitelist service dapat diperbarui langsung dari bot (persist ke `.env`).
 - **UI santai**: semua respons pakai gaya engineer friendly ala kurir digital supaya enak dibaca user.
 - **Service control aman**: sistem mengharuskan sudo tanpa password untuk service whitelisted, dengan fallback log jika izin belum disetup.
 
@@ -36,9 +37,9 @@ Ikuti panduan langkah demi langkah pada [`docs/install.md`](docs/install.md). Fi
 1. Paket apt wajib.
 2. Persiapan HDD 500 GB & fstab.
 3. Pembuatan venv dan instal dependensi.
-4. Penempatan kode ke `/opt/potion-runner/`.
+4. Penempatan kode ke `APP_DIR` (default `/opt/potion-runner/`).
 5. Konfigurasi `.env`, logrotate, dan systemd service+timer.
-6. Konfigurasi sudoers agar `dre` bisa jalankan `systemctl start/stop/restart` untuk layanan whitelist tanpa password.
+6. Konfigurasi sudoers agar user service bisa menjalankan `systemctl start/stop/restart` untuk layanan whitelist tanpa password.
 7. (Opsional) Atur `SELF_SERVICE` di `.env` kalau nama unit bot berbeda dari `potion-runner.service`.
 
 ## Menjalankan Bot Secara Manual
@@ -53,11 +54,15 @@ Jika service systemd sudah aktif, hindari menjalankan `python -m app.bot` secara
 - `/start`, tombol ReplyKeyboard utama.
 - `/status`, ringkas monitoring.
 - `/svc <aksi> <service>`, kontrol service (admin).
+- `/svc_list`, daftar whitelist dengan status terkini.
 - `/backup_now`, `/backup_list`, `/backup_verify`.
 - `/log_runtime`, `/log_journal <service>`.
 - `/ping [host]`, `/speed`, `/tailscale`.
 - `/apt_update`, `/pip_sync`, `/git_pull`.
 - `/set_backup HH:MM`, `/alerts`, `/alert_disable <kode> <menit>`.
+- `/set_threshold <metric> <nilai>`, kelola ambang alert.
+- `/svc_add <service>`, `/svc_remove <service>` untuk update whitelist.
+- `/uptime`, detail uptime + suhu.
 
 ## File Pendukung Sistem
 Templates tersedia di folder `ops/`:
@@ -67,6 +72,9 @@ Templates tersedia di folder `ops/`:
 - `ops/systemd/potion-runner-health.service`
 - `ops/systemd/potion-runner-health.timer`
 - `ops/logrotate/potion-runner`
+
+Skrip pendukung:
+- `scripts/update_timer.py` untuk sinkron jadwal timer systemd (dijalankan via sudo).
 
 Salin ke `/etc/systemd/system/` dan `/etc/logrotate.d/` sesuai petunjuk instalasi.
 

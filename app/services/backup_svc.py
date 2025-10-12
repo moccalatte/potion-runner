@@ -9,6 +9,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List
+from zoneinfo import ZoneInfo
 
 from ..config import Settings
 from ..utils.logging import get_logger
@@ -31,12 +32,20 @@ def _default_sources(settings: Settings) -> List[Path]:
         settings.log_dir,
         settings.data_dir / "requirements.lock",
         settings.data_dir / "ops",
+        settings.data_dir / "scripts",
+        settings.data_dir / ".env",
+        *settings.backup_extra_sources,
     ]
-    return [path for path in candidates if path.exists()]
+    unique: dict[Path, None] = {}
+    for path in candidates:
+        if path.exists():
+            unique.setdefault(path, None)
+    return list(unique.keys())
 
 
 async def perform_backup(settings: Settings, *, label: str | None = None) -> BackupReport:
-    timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    now = dt.datetime.now(ZoneInfo(settings.timezone))
+    timestamp = now.strftime("%Y%m%d-%H%M%S")
     label = label or timestamp
     snapshot_dir = settings.snapshots_dir / label
     snapshot_dir.mkdir(parents=True, exist_ok=True)
@@ -94,7 +103,7 @@ async def _write_manifest(snapshot_dir: Path, manifest_path: Path) -> int:
 
     manifest = {
         "snapshot": snapshot_dir.name,
-        "generated_at": dt.datetime.now().isoformat(),
+        "generated_at": dt.datetime.now(ZoneInfo(settings.timezone)).isoformat(),
         "files": files,
     }
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -129,4 +138,40 @@ async def verify_snapshot(manifest_path: Path) -> List[str]:
     return mismatches
 
 
-__all__ = ["perform_backup", "list_snapshots", "verify_snapshot", "BackupReport"]
+def latest_backup_timestamp(settings: Settings) -> dt.datetime | None:
+    if not settings.manifests_dir.exists():
+        return None
+    manifests = sorted(settings.manifests_dir.glob("*.json"), reverse=True)
+    tz = ZoneInfo(settings.timezone)
+    for manifest in manifests:
+        label = manifest.stem
+        try:
+            parsed = dt.datetime.strptime(label, "%Y%m%d-%H%M%S")
+        except ValueError:
+            continue
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=tz)
+        return parsed
+    return None
+
+
+def should_run_backup(settings: Settings, *, tolerance_minutes: int = 45) -> bool:
+    latest = latest_backup_timestamp(settings)
+    tz = ZoneInfo(settings.timezone)
+    now = dt.datetime.now(tz)
+    if latest is None:
+        return True
+    if latest.tzinfo is None:
+        latest = latest.replace(tzinfo=tz)
+    elapsed = now - latest
+    return elapsed >= dt.timedelta(minutes=tolerance_minutes)
+
+
+__all__ = [
+    "perform_backup",
+    "list_snapshots",
+    "verify_snapshot",
+    "BackupReport",
+    "latest_backup_timestamp",
+    "should_run_backup",
+]

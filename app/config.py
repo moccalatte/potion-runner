@@ -26,6 +26,7 @@ class Settings:
 
     bot_token: str
     admin_ids: Set[int]
+    env_file: Path
     data_dir: Path
     log_dir: Path
     backup_dir: Path
@@ -41,6 +42,7 @@ class Settings:
     backup_schedule: str = "02:30"
     timezone: str = "UTC"
     thresholds: Thresholds = field(default_factory=Thresholds)
+    backup_extra_sources: List[Path] = field(default_factory=list)
 
     def is_admin(self, user_id: Optional[int]) -> bool:
         return bool(user_id and user_id in self.admin_ids)
@@ -66,6 +68,24 @@ def _parse_services(raw: str | Iterable[str]) -> List[str]:
     else:
         items = [str(part).strip() for part in raw]
     return [item for item in items if item]
+
+
+def _parse_extra_paths(raw: str | Iterable[str], base: Path) -> List[Path]:
+    if not raw:
+        return []
+    if isinstance(raw, str):
+        items = [part.strip() for part in raw.split(",")]
+    else:
+        items = [str(part).strip() for part in raw]
+    paths: list[Path] = []
+    for item in items:
+        if not item:
+            continue
+        candidate = Path(item)
+        if not candidate.is_absolute():
+            candidate = base / candidate
+        paths.append(candidate)
+    return paths
 
 
 def _load_raw_env(env_path: Path) -> dict[str, str]:
@@ -143,12 +163,15 @@ def load_settings(env_path: Path | None = None) -> Settings:
         raise RuntimeError("ADMIN_IDS is required with at least one Telegram user id.")
 
     services_whitelist = _parse_services(raw_env.get("SERVICES_WHITELIST", ""))
+    services_whitelist = list(dict.fromkeys(services_whitelist))
     self_service = raw_env.get("SELF_SERVICE", "potion-runner.service").strip()
 
     backup_schedule = _normalize_schedule(raw_env.get("BACKUP_SCHEDULE", "02:30"))
+    backup_extra_sources = _parse_extra_paths(raw_env.get("BACKUP_INCLUDE", ""), data_dir)
     settings = Settings(
         bot_token=bot_token,
         admin_ids=admin_ids,
+        env_file=env_path,
         data_dir=data_dir,
         log_dir=log_dir,
         backup_dir=backup_dir,
@@ -164,6 +187,7 @@ def load_settings(env_path: Path | None = None) -> Settings:
         backup_schedule=backup_schedule,
         timezone=raw_env.get("TIMEZONE", "Asia/Jakarta"),
         thresholds=thresholds,
+        backup_extra_sources=backup_extra_sources,
     )
 
     return settings

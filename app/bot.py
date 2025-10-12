@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import datetime as dt
+import fcntl
+import os
+from pathlib import Path
 from typing import Iterable
 from zoneinfo import ZoneInfo
 
@@ -29,7 +32,7 @@ from .handlers import (
     updates,
 )
 from .menus import MAIN_MENU, wrap_failure, wrap_success
-from .services.backup_svc import perform_backup
+from .services.backup_svc import perform_backup, should_run_backup
 from .services.metrics import (
     HealthMonitor,
     collect_metrics,
@@ -41,6 +44,7 @@ from .utils.format import human_datetime
 from .utils.logging import get_logger, log_action, setup_logging
 
 logger = get_logger(__name__)
+_PROCESS_LOCK_FD: int | None = None
 
 
 async def health_check_job(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -98,6 +102,10 @@ async def health_check_job(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def backup_job(context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.bot_data["settings"]
+    if not should_run_backup(settings):
+        logger.info("Backup otomatis dilewati: snapshot terbaru masih valid")
+        log_action("backup.auto", user_id=None, result="skip", detail="recent snapshot")
+        return
     try:
         report = await perform_backup(settings)
         message = wrap_success(
@@ -167,6 +175,8 @@ def build_application(settings: Settings) -> Application:
     application.add_handler(CommandHandler("status", start.status_command))
 
     application.add_handler(CommandHandler("svc", controls.service_command))
+    application.add_handler(CommandHandler("svc_list", controls.control_menu))
+    application.add_handler(CommandHandler("services", controls.control_menu))
     application.add_handler(CommandHandler("log_runtime", logs.log_runtime))
     application.add_handler(CommandHandler("log_errors", logs.log_errors))
     application.add_handler(CommandHandler("log_file", logs.log_file))
@@ -188,6 +198,10 @@ def build_application(settings: Settings) -> Application:
     application.add_handler(CommandHandler("set_backup", admin.set_backup_schedule))
     application.add_handler(CommandHandler("alerts", admin.alerts_status))
     application.add_handler(CommandHandler("alert_disable", admin.alert_disable))
+    application.add_handler(CommandHandler("set_threshold", admin.set_threshold))
+    application.add_handler(CommandHandler("svc_add", admin.service_add))
+    application.add_handler(CommandHandler("svc_remove", admin.service_remove))
+    application.add_handler(CommandHandler("uptime", monitoring.uptime_detail))
 
     application.add_handler(MessageHandler(filters.Regex("^📊 Status$"), monitoring.show_status))
     application.add_handler(MessageHandler(filters.Regex("^🧰 Kontrol$"), controls.control_menu))
@@ -225,6 +239,7 @@ def schedule_health_jobs(application: Application) -> None:
 
 def main() -> None:
     settings = load_settings()
+    _acquire_process_lock(settings.data_dir / ".bot.lock")
     setup_logging(settings.runtime_log, settings.actions_log)
     application = build_application(settings)
 
@@ -234,3 +249,18 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def _acquire_process_lock(path: Path) -> None:
+    global _PROCESS_LOCK_FD
+    if _PROCESS_LOCK_FD is not None:
+        return
+    fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as exc:  # pragma: no cover - file lock is platform specific
+        os.close(fd)
+        raise RuntimeError(
+            "Instance bot lain masih berjalan. Matikan proses sebelumnya sebelum menjalankan ulang."
+        ) from exc
+    _PROCESS_LOCK_FD = fd
