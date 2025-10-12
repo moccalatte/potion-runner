@@ -341,6 +341,7 @@ python3 -m venv /opt/potion-runner/venv
 - Verifikasi **user id** pada setiap aksi sensitif (kontrol, reboot).
 - Rate limit & flood control (PTB built‑in + debounce di handler).
 - Validasi `systemctl` hanya pada **whitelist** service.
+- Kontrol service membutuhkan rule sudoers tanpa password agar bot bisa eksekusi `systemctl` otomatis.
 - Hindari mengeksekusi shell bebas; gunakan wrapper aman `run_cmd()` dengan timeout & exit code check.
 - Log audit tindakan (user id, aksi, waktu, hasil).
 

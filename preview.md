@@ -5,6 +5,7 @@
 - Handler lengkap untuk menu 📊/🧰/📜/💾/🌐/🔄/⚙️ serta command lanjutan (logs, service, backup, network, update, admin).
 - Wrapper `run_cmd` aman + logger runtime/actions, struktur folder sesuai PRD.
 - Sistem backup menggunakan rsync + manifest sha256, script CLI mendukung systemd timer (jadwal otomatis dinormalisasi; teks bot di-escape agar aman dari error HTML).
+- Kontrol service via `/svc` kini otomatis pakai `sudo -n`; jika belum ada rule sudoers, bot kasih pesan jelas.
 - Dokumentasi instalasi, template systemd & logrotate, `.env.example`, `requirements.lock` disertakan.
 
 ## Kekurangan / Risiko Tersisa

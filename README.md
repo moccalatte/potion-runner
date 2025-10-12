@@ -10,6 +10,7 @@ Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengont
 - **Network tools**: info IP, ping host favorit, status Tailscale, speed test (opsional).
 - **Alert & watchdog**: deteksi CPU/RAM/Disk/Suhu/Service fail dengan hysteresis, tulis `last_health.json`, kirim notifikasi ke admin.
 - **UI santai**: semua respons pakai gaya engineer friendly ala kurir digital supaya enak dibaca user.
+- **Service control aman**: sistem mengharuskan sudo tanpa password untuk service whitelisted, dengan fallback log jika izin belum disetup.
 
 ## Struktur Folder
 ```
@@ -37,6 +38,7 @@ Ikuti panduan langkah demi langkah pada [`docs/install.md`](docs/install.md). Fi
 3. Pembuatan venv dan instal dependensi.
 4. Penempatan kode ke `/opt/potion-runner/`.
 5. Konfigurasi `.env`, logrotate, dan systemd service+timer.
+6. Konfigurasi sudoers agar `dre` bisa jalankan `systemctl start/stop/restart` untuk layanan whitelist tanpa password.
 
 ## Menjalankan Bot Secara Manual
 ```bash

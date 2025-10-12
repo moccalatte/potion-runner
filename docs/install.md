@@ -99,6 +99,18 @@ systemctl status potion-runner
 journalctl -u potion-runner -f
 ```
 
+### 9a. Sudoers untuk Kontrol Service via Bot
+Agar perintah `/svc start|stop|restart` berjalan tanpa prompt password, tambahkan file sudoers khusus:
+
+```bash
+echo 'dre ALL=(root) NOPASSWD: /usr/bin/systemctl start potion-runner.service, \
+    /usr/bin/systemctl stop potion-runner.service, \
+    /usr/bin/systemctl restart potion-runner.service' | sudo tee /etc/sudoers.d/potion-runner
+sudo chmod 440 /etc/sudoers.d/potion-runner
+```
+
+Tambahkan layanan lain sesuai whitelist (`SERVICES_WHITELIST`) pada baris yang sama.
+
 ## 10. Sensors (Opsional)
 ```bash
 sudo sensors-detect

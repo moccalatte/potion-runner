@@ -10,6 +10,7 @@ from ..config import Settings
 from ..menus import MAIN_MENU, PROCESSING, wrap_failure, wrap_success
 from ..services.sysctl import control_service, list_services
 from ..utils.logging import log_action
+from ..utils.shell import ShellCommandError
 
 
 async def control_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -61,28 +62,41 @@ async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     try:
         result = await control_service(settings, service, action)
-        if result.returncode == 0:
-            message = wrap_success(f"{action} {service} sukses.")
-            await pending.edit_text(message)
-            log_action(
-                f"controls.{action}",
-                user_id=user_id,
-                result="ok",
-                detail=result.stdout,
-            )
-        else:
-            message = wrap_failure(result.stderr or "systemctl gagal")
-            await pending.edit_text(message)
-            log_action(
-                f"controls.{action}",
-                user_id=user_id,
-                result="fail",
-                detail=result.stderr,
-            )
     except ValueError as exc:
         await pending.edit_text(wrap_failure(str(exc)))
+        log_action(f"controls.{action}", user_id=user_id, result="fail", detail=str(exc))
+        return
+    except ShellCommandError as exc:
+        hint = (
+            "Gagal jalanin systemctl karena butuh sudo tanpa password. "
+            "Tambahkan rule sudoers agar command ini boleh jalan otomatis."
+        )
+        await pending.edit_text(wrap_failure(exc.stderr or hint))
         log_action(
-            f"controls.{action}", user_id=user_id, result="fail", detail=str(exc)
+            f"controls.{action}",
+            user_id=user_id,
+            result="fail",
+            detail=f"{exc.stderr or exc.stdout}",
+        )
+        return
+
+    if result.returncode == 0:
+        message = wrap_success(f"{action} {service} sukses.")
+        await pending.edit_text(message)
+        log_action(
+            f"controls.{action}",
+            user_id=user_id,
+            result="ok",
+            detail=result.stdout,
+        )
+    else:
+        message = wrap_failure(result.stderr or "systemctl gagal")
+        await pending.edit_text(message)
+        log_action(
+            f"controls.{action}",
+            user_id=user_id,
+            result="fail",
+            detail=result.stderr,
         )
 
 

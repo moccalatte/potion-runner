@@ -1,7 +1,7 @@
 """Wrappers around systemctl and journalctl with whitelist validation."""
 from __future__ import annotations
 
-import asyncio
+import os
 from dataclasses import dataclass
 from typing import Iterable, List, Sequence
 
@@ -32,17 +32,30 @@ def _validate_service(settings: Settings, name: str) -> str:
     return name
 
 
+def _systemctl_command(*args: str, require_root: bool = False) -> tuple[str, ...]:
+    base = ("systemctl",) + args
+    try:
+        need_sudo = require_root and os.geteuid() != 0
+    except AttributeError:  # platform tanpa geteuid
+        need_sudo = require_root
+    if need_sudo:
+        return ("sudo", "-n", *base)
+    return base
+
+
 async def _systemctl_show(service: str, properties: Sequence[str] | None = None) -> dict[str, str]:
     properties = properties or ["ActiveState", "SubState", "Description", "ActiveEnterTimestamp"]
     result = await run_cmd(
-        (
-            "systemctl",
+        _systemctl_command(
             "show",
             service,
+            f"--property={','.join(properties)}",
             "--no-page",
-            "--property=" + ",".join(properties),
-        )
+        ),
+        check=False,
     )
+    if result.returncode != 0:
+        raise ShellCommandError(tuple(result.command), result.returncode, result.stdout, result.stderr)
     data: dict[str, str] = {}
     for line in result.stdout.splitlines():
         if "=" in line:
@@ -86,7 +99,7 @@ async def control_service(settings: Settings, service: str, action: str) -> Comm
         raise ValueError("Aksi tidak valid. Gunakan start/stop/restart/reload.")
 
     logger.info("Menjalankan systemctl %s untuk %s", action, service)
-    return await run_cmd(("systemctl", action, service))
+    return await run_cmd(_systemctl_command(action, service, require_root=True))
 
 
 async def service_status(settings: Settings, service: str) -> ServiceStatus:
