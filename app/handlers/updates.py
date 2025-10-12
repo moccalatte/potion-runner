@@ -15,7 +15,7 @@ from ..utils.shell import run_cmd
 async def update_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = (
         "Opsi update:\n"
-        "• /apt_update → apt update & upgrade aman\n"
+        "• /apt_update → apt update dan upgrade aman\n"
         "• /pip_sync → sinkron pip dari requirements.lock\n"
         "• /git_pull → tarik perubahan repo"
     )

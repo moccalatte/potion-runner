@@ -53,7 +53,7 @@ async def health_check_job(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     triggered, recovered = monitor.evaluate(metrics, failed_services)
 
-    now = dt.datetime.utcnow()
+    now = dt.datetime.now(dt.timezone.utc)
 
     def _is_disabled(code: str) -> bool:
         expiry_text = disabled.get(code)
@@ -125,6 +125,10 @@ async def _broadcast(
             logger.warning("Gagal kirim pesan ke %s: %s", chat_id, exc)
 
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.error("Unhandled error processing update: %s", update, exc_info=context.error)
+
+
 def _reschedule_backup_job(application: Application, time_str: str) -> None:
     hour, minute = map(int, time_str.split(":"))
     tzinfo = application.bot_data.get("tzinfo") or ZoneInfo("UTC")
@@ -187,6 +191,7 @@ def build_application(settings: Settings) -> Application:
     application.add_handler(MessageHandler(filters.Regex("^⚙️ Settings$"), admin.settings_menu))
 
     application.add_handler(MessageHandler(filters.COMMAND, unknown_command))
+    application.add_error_handler(error_handler)
 
     schedule_health_jobs(application)
 

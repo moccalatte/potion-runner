@@ -1,6 +1,8 @@
 """Service control handlers."""
 from __future__ import annotations
 
+from html import escape
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -16,10 +18,11 @@ async def control_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     lines = ["Status layanan whitelist:"]
     for status in statuses:
         indicator = "✅" if status.is_healthy() else "⚠️"
-        lines.append(f"{indicator} {status.name} → {status.active_state}/{status.sub_state}")
-    lines.append(
-        "Gunakan perintah: /svc <start|stop|restart|status> <service>."
-    )
+        safe_name = escape(status.name)
+        safe_state = escape(status.active_state)
+        safe_sub = escape(status.sub_state)
+        lines.append(f"{indicator} {safe_name} → {safe_state}/{safe_sub}")
+    lines.append("Gunakan perintah: /svc &lt;start|stop|restart|status&gt; &lt;service&gt;.")
     await update.message.reply_text("\n".join(lines), reply_markup=MAIN_MENU)
     log_action("controls.menu", user_id=update.effective_user.id, result="ok", detail="menu")
 

@@ -1,6 +1,7 @@
 """Backup commands handlers."""
 from __future__ import annotations
 
+from html import escape
 from pathlib import Path
 
 from telegram import Update
@@ -17,7 +18,7 @@ async def backup_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "Menu backup:\n"
         "• /backup_now → backup instan\n"
         "• /backup_list → daftar snapshot\n"
-        "• /backup_verify <manifest> → verifikasi checksum"
+        "• /backup_verify &lt;manifest&gt; → verifikasi checksum"
     )
     await update.message.reply_text(text, reply_markup=MAIN_MENU)
     log_action("backup.menu", user_id=update.effective_user.id, result="ok", detail="menu")
@@ -54,7 +55,7 @@ async def backup_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     for snap in snapshots[-10:]:
         manifest = settings.manifests_dir / f"{snap.name}.json"
         status = "✅" if manifest.exists() else "⚪"
-        lines.append(f"{status} {snap.name}")
+        lines.append(f"{status} {escape(snap.name)}")
     await update.message.reply_text("\n".join(lines))
     log_action("backup.list", user_id=update.effective_user.id, result="ok", detail="list")
 
@@ -63,7 +64,9 @@ async def backup_verify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     settings: Settings = context.bot_data["settings"]
     user_id = update.effective_user.id
     if not context.args:
-        await update.message.reply_text("Gunakan /backup_verify <manifest>. Contoh: /backup_verify 20240101-010101.json")
+        await update.message.reply_text(
+            "Gunakan /backup_verify &lt;manifest&gt;. Contoh: /backup_verify 20240101-010101.json"
+        )
         return
     manifest_name = context.args[0]
     manifest_path = settings.manifests_dir / manifest_name

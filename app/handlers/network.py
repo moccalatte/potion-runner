@@ -1,6 +1,8 @@
 """Network information handlers."""
 from __future__ import annotations
 
+from html import escape
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -22,7 +24,8 @@ async def network_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 def _format_interface_rows(interfaces: list[IPInterface]) -> list[str]:
     rows: list[str] = []
     for iface in interfaces:
-        rows.append(f"• {iface.name}: {', '.join(iface.addresses)}")
+        safe_addresses = ", ".join(escape(addr) for addr in iface.addresses)
+        rows.append(f"• {escape(iface.name)}: {safe_addresses}")
     if not rows:
         rows.append("Tidak ada alamat aktif.")
     return rows
@@ -41,14 +44,14 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def speed_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     pending = await update.message.reply_text(PROCESSING)
     text = await speed_quick()
-    await pending.edit_text(text)
+    await pending.edit_text(wrap_success(text))
     log_action("network.speed", user_id=update.effective_user.id, result="ok", detail=text)
 
 
 async def tailscale_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     pending = await update.message.reply_text(PROCESSING)
     text = await tailscale_status()
-    await pending.edit_text(text[:3500])
+    await pending.edit_text(wrap_success(text[:3500]))
     log_action("network.tailscale", user_id=update.effective_user.id, result="ok", detail=text[:200])
 
 

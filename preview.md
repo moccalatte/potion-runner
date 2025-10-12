@@ -4,7 +4,7 @@
 - Bot async `python-telegram-bot` v21 dengan job queue: monitoring, alert hysteresis, backup otomatis.
 - Handler lengkap untuk menu 📊/🧰/📜/💾/🌐/🔄/⚙️ serta command lanjutan (logs, service, backup, network, update, admin).
 - Wrapper `run_cmd` aman + logger runtime/actions, struktur folder sesuai PRD.
-- Sistem backup menggunakan rsync + manifest sha256, script CLI mendukung systemd timer (jadwal otomatis dinormalisasi agar aman).
+- Sistem backup menggunakan rsync + manifest sha256, script CLI mendukung systemd timer (jadwal otomatis dinormalisasi; teks bot di-escape agar aman dari error HTML).
 - Dokumentasi instalasi, template systemd & logrotate, `.env.example`, `requirements.lock` disertakan.
 
 ## Kekurangan / Risiko Tersisa

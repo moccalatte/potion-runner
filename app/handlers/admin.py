@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from html import escape
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -17,7 +18,7 @@ async def settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     text = (
         "Pengaturan cepat:\n"
         f"• Jadwal backup sekarang: {backup_schedule}\n"
-        "• /set_backup <HH:MM> → ubah jadwal backup\n"
+        "• /set_backup &lt;HH:MM&gt; → ubah jadwal backup\n"
         "• /admins → lihat admin terdaftar\n"
         "• /alerts → status alert"
     )
@@ -60,18 +61,18 @@ async def alerts_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     disabled = context.bot_data.setdefault("alerts_disabled", {})
     if not disabled:
         await update.message.reply_text(
-            "Semua alert aktif. Gunakan /alert_disable <kode> <menit> untuk snooze."
+            "Semua alert aktif. Gunakan /alert_disable &lt;kode&gt; &lt;menit&gt; untuk snooze."
         )
         return
     lines = ["Alert dimatikan sementara:"]
-    now = dt.datetime.utcnow()
+    now = dt.datetime.now(dt.timezone.utc)
     for code, expiry in list(disabled.items()):
         expire_at = dt.datetime.fromisoformat(expiry)
         if expire_at < now:
             disabled.pop(code, None)
             continue
         remaining = int((expire_at - now).total_seconds() // 60)
-        lines.append(f"• {code} (sisa {remaining} menit)")
+        lines.append(f"• {escape(code)} (sisa {remaining} menit)")
     await update.message.reply_text("\n".join(lines))
 
 
@@ -82,7 +83,7 @@ async def alert_disable(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.reply_text("Khusus admin.")
         return
     if len(context.args) < 2:
-        await update.message.reply_text("Gunakan /alert_disable <kode> <menit>.")
+        await update.message.reply_text("Gunakan /alert_disable &lt;kode&gt; &lt;menit&gt;.")
         return
     code = context.args[0]
     try:
@@ -90,10 +91,12 @@ async def alert_disable(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     except ValueError:
         await update.message.reply_text("Menit harus angka.")
         return
-    expiry = dt.datetime.utcnow() + dt.timedelta(minutes=minutes)
+    expiry = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)
     disabled = context.bot_data.setdefault("alerts_disabled", {})
     disabled[code] = expiry.isoformat()
-    await update.message.reply_text(wrap_success(f"Alert {code} off hingga {expiry:%H:%M UTC}"))
+    await update.message.reply_text(
+        wrap_success(f"Alert {code} off hingga {expiry:%H:%M UTC}")
+    )
     log_action("admin.alert_disable", user_id=user_id, result="ok", detail=f"{code} {minutes}")
 
 

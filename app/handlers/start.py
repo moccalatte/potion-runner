@@ -27,7 +27,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.bot_data["settings"]
     text = (
-        "Bot ini bantu kamu pantau & kontrol node.\n"
+        "Bot ini bantu kamu pantau dan kontrol node.\n"
         "Menu utama pakai tombol Reply Keyboard.\n"
         "Gunakan /status untuk ringkasan cepat, /backup untuk backup instan,"
         " dan /services untuk daftar layanan whitelist."

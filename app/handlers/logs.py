@@ -15,7 +15,7 @@ from ..utils.logging import log_action
 
 async def logs_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = (
-        "Pilih salah satu: /log_runtime, /log_journal <service>, /log_errors.\n"
+        "Pilih salah satu: /log_runtime, /log_journal &lt;service&gt;, /log_errors.\n"
         "Untuk kirim file penuh gunakan /log_file."
     )
     await update.message.reply_text(text, reply_markup=MAIN_MENU)
@@ -54,7 +54,7 @@ async def log_file(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def log_journal(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.bot_data["settings"]
     if not context.args:
-        await update.message.reply_text("Gunakan /log_journal <service>.")
+        await update.message.reply_text("Gunakan /log_journal &lt;service&gt;.")
         return
     service = context.args[0]
     pending = await update.message.reply_text(PROCESSING)
