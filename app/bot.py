@@ -244,18 +244,32 @@ def _acquire_process_lock(path: Path) -> None:
     if _PROCESS_LOCK_FD is not None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(path, os.O_CREAT | os.O_RDWR | os.O_TRUNC, 0o600)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError as exc:  # pragma: no cover - file lock is platform specific
-        os.close(fd)
-        raise RuntimeError(
-            "Instance bot lain masih berjalan. Matikan proses sebelumnya sebelum menjalankan ulang."
-        ) from exc
-    os.write(fd, f"{os.getpid()}\n".encode())
-    os.fsync(fd)
-    _PROCESS_LOCK_FD = fd
-    atexit.register(_release_process_lock, path)
+
+    while True:
+        fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:  # pragma: no cover - file lock is platform specific
+            os.close(fd)
+            stale_pid = _read_lock_pid(path)
+            if stale_pid and not _pid_running(stale_pid):
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
+                continue
+            pid_info = f" (PID {stale_pid})" if stale_pid else ""
+            raise RuntimeError(
+                "Instance bot lain masih berjalan. Matikan proses sebelumnya sebelum menjalankan ulang"
+                + pid_info
+            ) from exc
+
+        os.ftruncate(fd, 0)
+        os.write(fd, f"{os.getpid()}\n".encode())
+        os.fsync(fd)
+        _PROCESS_LOCK_FD = fd
+        atexit.register(_release_process_lock, path)
+        break
 
 
 def _release_process_lock(path: Path | None = None) -> None:
@@ -272,6 +286,22 @@ def _release_process_lock(path: Path | None = None) -> None:
                 os.unlink(path)
             except FileNotFoundError:
                 pass
+
+
+def _read_lock_pid(path: Path) -> int | None:
+    try:
+        content = path.read_text(encoding="utf-8").strip()
+        return int(content) if content else None
+    except (FileNotFoundError, ValueError):
+        return None
+
+
+def _pid_running(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
 
 
 def main() -> None:
