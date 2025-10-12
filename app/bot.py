@@ -239,20 +239,6 @@ def schedule_health_jobs(application: Application) -> None:
         _reschedule_backup_job(application, backup_time)
 
 
-def main() -> None:
-    settings = load_settings()
-    _acquire_process_lock(settings.data_dir / ".bot.lock")
-    setup_logging(settings.runtime_log, settings.actions_log)
-    application = build_application(settings)
-
-    logger.info("Bot mulai pada %s", human_datetime())
-    application.run_polling(stop_signals=None)
-
-
-if __name__ == "__main__":
-    main()
-
-
 def _acquire_process_lock(path: Path) -> None:
     global _PROCESS_LOCK_FD
     if _PROCESS_LOCK_FD is not None:
@@ -268,6 +254,30 @@ def _acquire_process_lock(path: Path) -> None:
     _PROCESS_LOCK_FD = fd
     atexit.register(_release_process_lock)
 
+
+def _release_process_lock() -> None:
+    global _PROCESS_LOCK_FD
+    if _PROCESS_LOCK_FD is None:
+        return
+    try:
+        fcntl.flock(_PROCESS_LOCK_FD, fcntl.LOCK_UN)
+    finally:
+        os.close(_PROCESS_LOCK_FD)
+        _PROCESS_LOCK_FD = None
+
+
+def main() -> None:
+    settings = load_settings()
+    _acquire_process_lock(settings.data_dir / ".bot.lock")
+    setup_logging(settings.runtime_log, settings.actions_log)
+    application = build_application(settings)
+
+    logger.info("Bot mulai pada %s", human_datetime())
+    application.run_polling(stop_signals=None)
+
+
+if __name__ == "__main__":
+    main()
 
 def _release_process_lock() -> None:
     global _PROCESS_LOCK_FD
