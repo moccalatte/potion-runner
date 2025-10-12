@@ -41,6 +41,7 @@ Ikuti panduan langkah demi langkah pada [`docs/install.md`](docs/install.md). Fi
 5. Konfigurasi `.env`, logrotate, dan systemd service+timer.
 6. Konfigurasi sudoers agar user service bisa menjalankan `systemctl start/stop/restart` untuk layanan whitelist tanpa password.
 7. (Opsional) Atur `SELF_SERVICE` di `.env` kalau nama unit bot berbeda dari `potion-runner.service`.
+8. Untuk debug manual tanpa mematikan service, set `POTION_FORCE_RUN=1` sebelum `python -m app.bot` (pastikan instance lain sudah berhenti agar tidak ada konflik).
 
 ## Menjalankan Bot Secara Manual
 ```bash

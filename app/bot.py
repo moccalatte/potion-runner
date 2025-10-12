@@ -306,7 +306,12 @@ def _pid_running(pid: int) -> bool:
 
 def main() -> None:
     settings = load_settings()
-    _acquire_process_lock(settings.data_dir / ".bot.lock")
+    if os.environ.get("POTION_FORCE_RUN", "0") != "1":
+        _acquire_process_lock(settings.data_dir / ".bot.lock")
+    else:
+        logger.warning(
+            "POTION_FORCE_RUN=1 terdeteksi. Lewati file lock, pastikan tidak ada instance lain yang berjalan."
+        )
     setup_logging(settings.runtime_log, settings.actions_log)
     application = build_application(settings)
 
