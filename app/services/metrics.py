@@ -32,8 +32,10 @@ class SystemMetrics:
     swap_percent: float
     disk_root_percent: float
     disk_root_free: int
+    disk_root_total: int
     disk_hdd_percent: float | None
     disk_hdd_free: int | None
+    disk_hdd_total: int | None
     uptime_seconds: float
     temperatures: List[Temperature] = field(default_factory=list)
 
@@ -189,9 +191,11 @@ def collect_metrics(settings: Settings) -> SystemMetrics:
         disk_hdd = psutil.disk_usage(str(settings.hdd_mount))
         disk_hdd_percent = disk_hdd.percent
         disk_hdd_free = disk_hdd.free
+        disk_hdd_total = disk_hdd.total
     except FileNotFoundError:
         disk_hdd_percent = None
         disk_hdd_free = None
+        disk_hdd_total = None
 
     uptime_seconds = timestamp.timestamp() - psutil.boot_time()
 
@@ -216,8 +220,10 @@ def collect_metrics(settings: Settings) -> SystemMetrics:
         swap_percent=swap.percent,
         disk_root_percent=disk_root.percent,
         disk_root_free=disk_root.free,
+        disk_root_total=disk_root.total,
         disk_hdd_percent=disk_hdd_percent,
         disk_hdd_free=disk_hdd_free,
+        disk_hdd_total=disk_hdd_total,
         uptime_seconds=uptime_seconds,
         temperatures=temps,
     )
@@ -227,13 +233,17 @@ def collect_metrics(settings: Settings) -> SystemMetrics:
 
 def metrics_summary(metrics: SystemMetrics) -> str:
     parts = [
-        f"CPU {metrics.cpu_percent:.1f}% ({', '.join(f'{val:.2f}' for val in metrics.load_avg)} load)",
-        f"RAM {metrics.mem_percent:.1f}% tersedia {human_bytes(metrics.mem_available)}",
-        f"Disk / {metrics.disk_root_percent:.1f}% tersisa {human_bytes(metrics.disk_root_free)}",
+        f"CPU {metrics.cpu_percent:.1f}% (Load {', '.join(f'{val:.2f}' for val in metrics.load_avg)})",
+        f"RAM tersisa {human_bytes(metrics.mem_available)} dari {human_bytes(metrics.mem_total)}",
+        f"Disk / terpakai {human_bytes(metrics.disk_root_total - metrics.disk_root_free)} dari {human_bytes(metrics.disk_root_total)}",
     ]
-    if metrics.disk_hdd_percent is not None and metrics.disk_hdd_free is not None:
+    if (
+        metrics.disk_hdd_percent is not None
+        and metrics.disk_hdd_free is not None
+        and metrics.disk_hdd_total is not None
+    ):
         parts.append(
-            f"Disk HDD {metrics.disk_hdd_percent:.1f}% tersisa {human_bytes(metrics.disk_hdd_free)}"
+            f"Disk HDD terpakai {human_bytes(metrics.disk_hdd_total - metrics.disk_hdd_free)} dari {human_bytes(metrics.disk_hdd_total)}"
         )
     parts.append(f"Uptime {metrics.uptime_seconds/3600:.1f} jam")
     if metrics.temperatures:

@@ -19,9 +19,3 @@
 - Tambahkan test otomatis untuk handler `/set_threshold`, `/svc_add`, dan `/svc_remove` agar regresi mudah terdeteksi. ✅
 - Evaluasi opsi enkripsi atau offsite storage untuk snapshot yang mengandung `.env`. ✅
 
-## Instruksi Laptop Jadul (Segera Dijadwalkan)
-- Tambahkan rule sudoers tanpa password untuk `sudo /opt/potion-runner/scripts/update_timer.py --time <HH:MM>` serta perintah `apt update/upgrade` agar bot bisa menyinkronkan jadwal dan update paket. ☑️
-- Jalankan `sudo /opt/potion-runner/scripts/update_timer.py --time 02:30` sekali setelah deploy supaya timer systemd memakai jadwal baru. ☑️
-- Pastikan paket `speedtest-cli` terpasang (`sudo apt install speedtest-cli`) agar menu speed test bekerja penuh. ☑️
-- Review ulang `.env` (khususnya `TIMEZONE`, `BACKUP_INCLUDE`, dan whitelist service) lalu simpan perubahan melalui `/set_threshold` atau `/svc_add` sesuai kebutuhan. ☑️
-- Reload daemon dan restart unit terkait: `sudo systemctl daemon-reload && sudo systemctl restart potion-runner.service potion-runner-backup.timer potion-runner-health.timer`. ☑️

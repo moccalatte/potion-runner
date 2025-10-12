@@ -54,16 +54,8 @@ async def tailscale_status() -> str:
 
 async def speed_quick() -> str:
     if shutil.which("speedtest"):
-        result = await run_cmd(
-            (
-                "speedtest",
-                "--accept-license",
-                "--accept-gdpr",
-                "-f",
-                "json",
-            ),
-            check=False,
-        )
+        cli_args = ("speedtest", "--json")
+        result = await run_cmd(cli_args, check=False)
         if result.stdout:
             try:
                 data = json.loads(result.stdout)
@@ -72,8 +64,8 @@ async def speed_quick() -> str:
                 ping_ms = data.get("ping", {}).get("latency", 0)
                 return f"Download {download:.1f} Mbps | Upload {upload:.1f} Mbps | Ping {ping_ms:.0f} ms"
             except json.JSONDecodeError:
-                pass
-        return result.stdout or result.stderr or "Speedtest tidak memberikan hasil."
+                return result.stdout.strip()
+        return result.stderr or "Speedtest CLI belum mengembalikan data."
 
     return "Tidak ada utilitas speedtest. Install paket resmi 'speedtest-cli' dulu ya."
 
