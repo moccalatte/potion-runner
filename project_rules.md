@@ -37,3 +37,4 @@
 - Dilarang rename/pindah file kecuali diminta.
 - Fokus jelaskan *kenapa error terjadi* sebelum kasih fix.
 - Setelah selesai, selalu hasilkan `preview.md` yang merangkum poin kekurangan serta anomali dan ambigu yang ada projek.
+- Di setiap perubahan, setelah selesai proses, selalu sarankan rekomendasi pesan commit.

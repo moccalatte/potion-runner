@@ -15,14 +15,14 @@ from ..utils.logging import log_action
 async def control_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.bot_data["settings"]
     statuses = await list_services(settings)
-    lines = ["Status layanan whitelist:"]
+    lines = ["Status layanan whitelist (yang aman buat diutak-atik):"]
     for status in statuses:
         indicator = "✅" if status.is_healthy() else "⚠️"
         safe_name = escape(status.name)
         safe_state = escape(status.active_state)
         safe_sub = escape(status.sub_state)
         lines.append(f"{indicator} {safe_name} → {safe_state}/{safe_sub}")
-    lines.append("Gunakan perintah: /svc &lt;start|stop|restart|status&gt; &lt;service&gt;.")
+    lines.append("Butuh manual override? Pakai format: /svc &lt;start|stop|restart|status&gt; &lt;service&gt;.")
     await update.message.reply_text("\n".join(lines), reply_markup=MAIN_MENU)
     log_action("controls.menu", user_id=update.effective_user.id, result="ok", detail="menu")
 
@@ -31,12 +31,14 @@ async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     settings: Settings = context.bot_data["settings"]
     user_id = update.effective_user.id
     if not settings.is_admin(user_id):
-        await update.message.reply_text("Fitur ini khusus admin.")
+        await update.message.reply_text("Fitur ini cuma buat admin ya. Minta akses dulu kalau perlu.")
         log_action("controls.denied", user_id=user_id, result="deny", detail="not admin")
         return
 
     if len(context.args) < 2:
-        await update.message.reply_text("Format salah. Contoh: /svc restart potion-runner.service")
+        await update.message.reply_text(
+            "Formatnya: /svc &lt;aksi&gt; &lt;service&gt;. Contoh: /svc restart potion-runner.service"
+        )
         return
 
     action = context.args[0].lower()
@@ -47,7 +49,7 @@ async def service_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         statuses = await list_services(settings)
         match = next((s for s in statuses if s.name == service), None)
         if not match:
-            await pending.edit_text(wrap_failure("Service tidak ditemukan."))
+            await pending.edit_text(wrap_failure("Service yang dimaksud belum ada di whitelist."))
             log_action("controls.status", user_id=user_id, result="fail", detail=service)
             return
         msg = wrap_success(

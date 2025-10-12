@@ -14,9 +14,9 @@ from ..utils.logging import log_action
 
 async def network_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     interfaces = await ip_info()
-    summary = ["Interface aktif:"]
+    summary = ["Interface aktif di server kamu:"]
     summary.extend(_format_interface_rows(interfaces))
-    summary.append("Perintah: /ping, /speed, /tailscale")
+    summary.append("Perintah cepat: /ping, /speed, /tailscale")
     await update.message.reply_text("\n".join(summary), reply_markup=MAIN_MENU)
     log_action("network.menu", user_id=update.effective_user.id, result="ok", detail="menu")
 
@@ -37,21 +37,22 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     pending = await update.message.reply_text(PROCESSING)
     result = await ping(host)
     text = result.stdout or result.stderr or "Ping tidak memberikan output."
-    await pending.edit_text(wrap_success(text))
+    payload = f"Hasil ping ke {escape(host)}:\n{text}" if text else f"Hasil ping ke {escape(host)} tidak ada respons."
+    await pending.edit_text(wrap_success(payload[:3500]))
     log_action("network.ping", user_id=update.effective_user.id, result="ok", detail=host)
 
 
 async def speed_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     pending = await update.message.reply_text(PROCESSING)
     text = await speed_quick()
-    await pending.edit_text(wrap_success(text))
+    await pending.edit_text(wrap_success(f"Speed test singkat:\n{text}"[:3500]))
     log_action("network.speed", user_id=update.effective_user.id, result="ok", detail=text)
 
 
 async def tailscale_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     pending = await update.message.reply_text(PROCESSING)
     text = await tailscale_status()
-    await pending.edit_text(wrap_success(text[:3500]))
+    await pending.edit_text(wrap_success(f"Status Tailscale:\n{text}"[:3500]))
     log_action("network.tailscale", user_id=update.effective_user.id, result="ok", detail=text[:200])
 
 

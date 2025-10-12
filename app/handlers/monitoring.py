@@ -1,7 +1,10 @@
 """Monitoring related handlers."""
 from __future__ import annotations
 
+from html import escape
+
 from telegram import Update
+from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 from ..config import Settings
@@ -13,7 +16,7 @@ from ..utils.logging import log_action
 
 async def show_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.bot_data["settings"]
-    message = await update.message.reply_text(PROCESSING)
+    pending = await update.message.reply_text(PROCESSING)
     metrics = collect_metrics(settings)
 
     rows = [
@@ -32,11 +35,16 @@ async def show_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     summary = metrics_summary(metrics)
     detail = render_table([(name, value) for name, value in rows])
+    detail_block = f"<pre>{escape(detail)}</pre>" if detail else ""
 
-    await message.edit_text(
-        "Sudah siap nih! ✅ Info singkat:\n" f"{summary}\n\n{detail}",
-        reply_markup=MAIN_MENU,
-    )
+    final_text = f"{wrap_success(summary)}\n\n{detail_block}".strip()
+    await update.message.reply_text(final_text, reply_markup=MAIN_MENU)
+
+    try:
+        await pending.delete()
+    except TelegramError:
+        pass
+
     log_action("monitoring.status", user_id=update.effective_user.id, result="ok", detail=summary)
 
 
@@ -44,12 +52,15 @@ async def uptime_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     settings: Settings = context.bot_data["settings"]
     metrics = collect_metrics(settings)
     uptime = human_duration(metrics.uptime_seconds)
-    temps = (
-        "\n".join(f"• {item.label}: {item.current:.0f}°C" for item in metrics.temperatures)
-        if metrics.temperatures
-        else "Tidak ada sensor."
-    )
-    text = wrap_success(f"Uptime {uptime}.\nTemperatur:\n{temps}")
+    if metrics.temperatures:
+        temps_lines = "\n".join(
+            f"• {escape(item.label)}: {item.current:.0f}°C" for item in metrics.temperatures
+        )
+        temps_section = f"Detail suhu:\n{temps_lines}"
+    else:
+        temps_section = "Sensor suhu belum kebaca."
+
+    text = f"{wrap_success(f'Uptime {uptime}')}\n\n{temps_section}"
     await update.message.reply_text(text, reply_markup=MAIN_MENU)
     log_action("monitoring.uptime", user_id=update.effective_user.id, result="ok", detail=text)
 

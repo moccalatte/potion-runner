@@ -15,8 +15,11 @@ from ..utils.logging import log_action
 
 async def logs_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = (
-        "Pilih salah satu: /log_runtime, /log_journal &lt;service&gt;, /log_errors.\n"
-        "Untuk kirim file penuh gunakan /log_file."
+        "Menu log siap bantu debugging cepat:\n"
+        "• /log_runtime → tail realtime\n"
+        "• /log_journal &lt;service&gt; → ambil journalctl\n"
+        "• /log_errors → cari kata `error`\n"
+        "Kalau butuh file full-nya, kirim /log_file."
     )
     await update.message.reply_text(text, reply_markup=MAIN_MENU)
     log_action("logs.menu", user_id=update.effective_user.id, result="ok", detail="menu")
@@ -37,7 +40,7 @@ async def log_errors(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     if lines:
         await pending.edit_text(wrap_success("\n".join(lines[:30])))
     else:
-        await pending.edit_text("Tidak ditemukan baris error.")
+        await pending.edit_text("Belum ketemu baris error, aman sementara ini.")
     log_action("logs.errors", user_id=update.effective_user.id, result="ok", detail="grep error")
 
 
@@ -45,7 +48,7 @@ async def log_file(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.bot_data["settings"]
     path = settings.runtime_log
     if not path.exists():
-        await update.message.reply_text("File runtime.log belum dibuat.")
+        await update.message.reply_text("File runtime.log belum ada nih. Coba jalankan bot sebentar lalu ulangi.")
         return
     await update.message.reply_document(document=path)
     log_action("logs.file", user_id=update.effective_user.id, result="ok", detail="runtime.log")

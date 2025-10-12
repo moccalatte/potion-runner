@@ -15,10 +15,10 @@ from ..utils.logging import log_action
 
 async def backup_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = (
-        "Menu backup:\n"
-        "• /backup_now → backup instan\n"
-        "• /backup_list → daftar snapshot\n"
-        "• /backup_verify &lt;manifest&gt; → verifikasi checksum"
+        "Menu backup siap on-call:\n"
+        "• /backup_now → bikin snapshot baru sekarang juga\n"
+        "• /backup_list → lihat koleksi snapshot terakhir\n"
+        "• /backup_verify &lt;manifest&gt; → cek checksum snapshot tertentu"
     )
     await update.message.reply_text(text, reply_markup=MAIN_MENU)
     log_action("backup.menu", user_id=update.effective_user.id, result="ok", detail="menu")
@@ -28,7 +28,7 @@ async def backup_now(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     settings: Settings = context.bot_data["settings"]
     user_id = update.effective_user.id
     if not settings.is_admin(user_id):
-        await update.message.reply_text("Fitur ini hanya untuk admin.")
+        await update.message.reply_text("Akses backup manual khusus admin ya. Mintalah izin dulu kalau perlu.")
         log_action("backup.now", user_id=user_id, result="deny", detail="not admin")
         return
 
@@ -36,7 +36,7 @@ async def backup_now(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     try:
         report = await perform_backup(settings)
         summary = (
-            f"Snapshot {report.snapshot.name} selesai. {report.files_indexed} file diindeks."
+            f"Snapshot {escape(report.snapshot.name)} kelar. {report.files_indexed} file berhasil dicatat."
         )
         await pending.edit_text(wrap_success(summary))
         log_action("backup.now", user_id=user_id, result="ok", detail=summary)
@@ -49,7 +49,7 @@ async def backup_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     settings: Settings = context.bot_data["settings"]
     snapshots = list_snapshots(settings)
     if not snapshots:
-        await update.message.reply_text("Belum ada snapshot.")
+        await update.message.reply_text("Belum ada snapshot sama sekali. Jalankan /backup_now dulu ya.")
         return
     lines = ["Daftar snapshot tersedia:"]
     for snap in snapshots[-10:]:
@@ -71,7 +71,7 @@ async def backup_verify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     manifest_name = context.args[0]
     manifest_path = settings.manifests_dir / manifest_name
     if not manifest_path.exists():
-        await update.message.reply_text("Manifest tidak ditemukan.")
+        await update.message.reply_text("Manifest yang dimaksud belum ada. Cek lagi nama filenya ya.")
         return
     pending = await update.message.reply_text(PROCESSING)
     mismatches = await verify_snapshot(manifest_path)

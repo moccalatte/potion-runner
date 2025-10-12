@@ -14,9 +14,9 @@ from ..utils.shell import run_cmd
 
 async def update_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = (
-        "Opsi update:\n"
-        "• /apt_update → apt update dan upgrade aman\n"
-        "• /pip_sync → sinkron pip dari requirements.lock\n"
+        "Menu maintenance harian:\n"
+        "• /apt_update → jalanin apt update + upgrade aman\n"
+        "• /pip_sync → sinkron pip sesuai requirements.lock\n"
         "• /git_pull → tarik perubahan repo"
     )
     await update.message.reply_text(text, reply_markup=MAIN_MENU)
@@ -27,7 +27,7 @@ async def apt_update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
     settings: Settings = context.bot_data["settings"]
     user_id = update.effective_user.id
     if not settings.is_admin(user_id):
-        await update.message.reply_text("Butuh akses admin.")
+        await update.message.reply_text("Akses ini khusus admin ya, minta izin dulu kalau perlu.")
         return
     pending = await update.message.reply_text(PROCESSING)
     result = await run_cmd(
@@ -50,17 +50,17 @@ async def pip_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.bot_data["settings"]
     user_id = update.effective_user.id
     if not settings.is_admin(user_id):
-        await update.message.reply_text("Butuh akses admin.")
+        await update.message.reply_text("Akses ini khusus admin ya, minta izin dulu kalau perlu.")
         return
     pending = await update.message.reply_text(PROCESSING)
     requirements = settings.data_dir / "requirements.lock"
     if not requirements.exists():
-        await pending.edit_text(wrap_failure("requirements.lock belum dibuat."))
+        await pending.edit_text(wrap_failure("requirements.lock belum tersedia. Generate dulu ya."))
         return
     pip_path = settings.data_dir / "venv" / "bin" / "pip"
     if not pip_path.exists():
         await pending.edit_text(
-            wrap_failure("Venv belum dibuat. Jalankan setup venv dahulu.")
+            wrap_failure("Venv belum ada. Jalankan setup venv dulu baru lanjut.")
         )
         return
     command = (str(pip_path), "install", "-r", str(requirements))
@@ -77,7 +77,7 @@ async def git_pull(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     settings: Settings = context.bot_data["settings"]
     user_id = update.effective_user.id
     if not settings.is_admin(user_id):
-        await update.message.reply_text("Butuh akses admin.")
+        await update.message.reply_text("Akses ini khusus admin ya, minta izin dulu kalau perlu.")
         return
     pending = await update.message.reply_text(PROCESSING)
     result = await run_cmd(

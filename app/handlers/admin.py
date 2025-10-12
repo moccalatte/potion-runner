@@ -37,16 +37,16 @@ async def set_backup_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE
     settings: Settings = context.bot_data["settings"]
     user_id = update.effective_user.id
     if not settings.is_admin(user_id):
-        await update.message.reply_text("Khusus admin.")
+        await update.message.reply_text("Fitur ini khusus admin ya, hubungi PIC kalau butuh akses.")
         return
     if not context.args:
-        await update.message.reply_text("Gunakan /set_backup HH:MM")
+        await update.message.reply_text("Formatnya: /set_backup HH:MM")
         return
     raw_value = context.args[0].replace(".", ":")
     try:
         parsed = dt.datetime.strptime(raw_value, "%H:%M")
     except ValueError:
-        await update.message.reply_text("Format salah. Gunakan HH:MM (24 jam).")
+        await update.message.reply_text("Format salah. Pakai format HH:MM (24 jam).")
         return
     value = parsed.strftime("%H:%M")
     context.bot_data["backup_schedule"] = value
@@ -80,7 +80,7 @@ async def alert_disable(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     settings: Settings = context.bot_data["settings"]
     user_id = update.effective_user.id
     if not settings.is_admin(user_id):
-        await update.message.reply_text("Khusus admin.")
+        await update.message.reply_text("Fitur ini khusus admin ya, hubungi PIC kalau butuh akses.")
         return
     if len(context.args) < 2:
         await update.message.reply_text("Gunakan /alert_disable &lt;kode&gt; &lt;menit&gt;.")

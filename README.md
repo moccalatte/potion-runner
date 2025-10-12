@@ -9,6 +9,7 @@ Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengont
 - **Backup rsync**: snapshot harian ke HDD `/mnt/potion-data`, manifest checksum, verifikasi.
 - **Network tools**: info IP, ping host favorit, status Tailscale, speed test (opsional).
 - **Alert & watchdog**: deteksi CPU/RAM/Disk/Suhu/Service fail dengan hysteresis, tulis `last_health.json`, kirim notifikasi ke admin.
+- **UI santai**: semua respons pakai gaya engineer friendly ala kurir digital supaya enak dibaca user.
 
 ## Struktur Folder
 ```

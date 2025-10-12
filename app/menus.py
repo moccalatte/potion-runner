@@ -15,12 +15,10 @@ MAIN_MENU = ReplyKeyboardMarkup(
     resize_keyboard=True,
 )
 
-PROCESSING = (
-    "Waduh, sepertinya sedang ramai… tapi tunggu sebentar ya 🧃. Lagi siapin datamu nih…"
-)
-DONE_OK = "Sudah siap nih! ✅ Info singkat: {summary}"
-DONE_FAIL = "Hmm, ada kendala nih ❌. Rangkuman error: {error}. Coba lagi ya."
-CONFIRM_TEMPLATE = "Yakin mau {action}? Balas YA untuk lanjut."
+PROCESSING = "Oke, lagi aku cek dulu server kamu. Sabar sebentar ya ⚙️"
+DONE_OK = "Beres! ✅ Ringkasan: {summary}"
+DONE_FAIL = "Kenapa ya... ❌ Ada error: {error}. Coba ulang sebentar lagi, aku standby kok."
+CONFIRM_TEMPLATE = "Yakin mau {action}? Balas YA kalau sudah mantap."
 
 
 def wrap_success(summary: str) -> str:
