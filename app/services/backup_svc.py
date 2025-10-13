@@ -76,11 +76,11 @@ async def perform_backup(settings: Settings, *, label: str | None = None) -> Bac
             await loop.run_in_executor(None, shutil.copy2, source, destination)
 
     manifest_path = settings.manifests_dir / f"{label}.json"
-    files_indexed = await _write_manifest(snapshot_dir, manifest_path)
+    files_indexed = await _write_manifest(snapshot_dir, manifest_path, settings)
     return BackupReport(snapshot=snapshot_dir, manifest=manifest_path, files_indexed=files_indexed, rsync_output=rsync_logs)
 
 
-async def _write_manifest(snapshot_dir: Path, manifest_path: Path) -> int:
+async def _write_manifest(snapshot_dir: Path, manifest_path: Path, settings: Settings) -> int:
     loop = asyncio.get_running_loop()
     files: list[dict[str, str]] = []
 
