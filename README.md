@@ -1,12 +1,12 @@
 # Potion Runner Bot
 
-Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengontrol node MCP/RAG pada laptop ASUS X450L. Proyek ini mengikuti _PRD potion runner_ dan memprioritaskan pengalaman pengguna ramah, logging real-time, backup otomatis, serta watchdog alert.
+Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengontrol node MCP/RAG pada **Server Potion** (setara VPS i5-4210u, RAM 8GB, SSD 256GB, HDD 500GB). Proyek ini mengikuti _PRD potion runner_ dan memprioritaskan pengalaman pengguna ramah, logging real-time, backup otomatis, serta watchdog alert.
 
 ## Fitur Utama
 - **Monitoring cepat**: CPU, RAM, disk (root & HDD), uptime, suhu (jika sensor), status layanan whitelist.
 - **Kontrol aman**: start/stop/restart service systemd, update apt/pip/git dengan konfirmasi, audit log aksi.
 - **Manajemen log**: tail runtime, grep error, kirim file log, akses journalctl service.
-- **Backup rsync**: snapshot harian ke HDD `/mnt/potion-data`, manifest checksum, verifikasi.
+- **Backup rsync**: snapshot harian ke HDD `/mnt/dre`, manifest checksum, verifikasi.
 - **Network tools**: info IP, ping host favorit, status Tailscale, speed test berbasis `speedtest-cli` (opsional).
 - **Alert & watchdog**: deteksi CPU/RAM/Disk/Suhu/Service fail dengan hysteresis, tulis `last_health.json`, kirim notifikasi ke admin.
 - **Pengaturan dinamis**: jadwal backup, threshold alert, dan whitelist service dapat diperbarui langsung dari bot (persist ke `.env`).

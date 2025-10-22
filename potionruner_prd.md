@@ -27,7 +27,7 @@
 - Ubuntu 24.04 (server/headless), user non‑root `dre` + sudo.
 - **systemd** untuk daemon bot & timer (backup, health check).
 - **journald + logrotate** untuk log aman.
-- **fstab** mount HDD 500 GB by UUID → `/mnt/potion-data` (ext4, `noatime`), folder data: backups, logs, dumps.
+- **fstab** mount HDD 500 GB by UUID → `/mnt/dre` (ext4, `noatime`), folder data: backups, logs, dumps.
 
 **Layer 2 – Runtime Aplikasi (Python venv)**
 - Python 3.12+, `venv` terisolasi: `/opt/potion-runner/venv`.
@@ -106,9 +106,9 @@
    └─ snapshots/             # hasil rsync per tanggal
 ```
 
-**Data di HDD** (direkomendasikan): mount ke `/mnt/potion-data` lalu symlink:
+**Data di HDD** (direkomendasikan): mount ke `/mnt/dre` lalu symlink:
 ```
-/mnt/potion-data/
+/mnt/dre/
 ├─ potion-runner-logs/      → symlink dari /opt/potion-runner/logs
 ├─ potion-runner-backups/   → symlink dari /opt/potion-runner/backups
 └─ dumps/
@@ -135,7 +135,7 @@ ADMIN_IDS="12345678,87654321"    # CSV user id yang boleh pakai fitur kritikal
 DATA_DIR="/opt/potion-runner"    # root app
 LOG_DIR="/opt/potion-runner/logs"
 BACKUP_DIR="/opt/potion-runner/backups"
-HDD_MOUNT="/mnt/potion-data"     # target mount hdd
+HDD_MOUNT="/mnt/dre"     # target mount hdd
 SERVICES_WHITELIST="potion-runner.service,cloudflared.service,n8n.service"
 SELF_SERVICE="potion-runner.service"      # nama unit bot sendiri untuk restart otomatis
 ```
@@ -209,7 +209,7 @@ SELF_SERVICE="potion-runner.service"      # nama unit bot sendiri untuk restart 
 
 ## 10) Backup & Restore (HDD 500 GB)
 
-**Ruang HDD**: gunakan partisi `sdb4` (270 GB) atau `sdb5` (194 GB) → format ext4 dan mount ke `/mnt/potion-data`.
+**Ruang HDD**: gunakan partisi `sdb4` (270 GB) atau `sdb5` (194 GB) → format ext4 dan mount ke `/mnt/dre`.
 
 **Isi backup**
 - `/opt/potion-runner/app` (kode & config non‑secret), `requirements.lock`.
@@ -281,10 +281,10 @@ WantedBy=multi-user.target
   `sudo mkfs.ext4 -L POTIONDATA /dev/sdb4`  
   *Membuat sistem file ext4 bernama POTIONDATA.*
 - Buat mount point & mount by UUID (lebih stabil):
-  - `sudo mkdir -p /mnt/potion-data`
+  - `sudo mkdir -p /mnt/dre`
   - Dapatkan UUID: `sudo blkid /dev/sdb4`
   - Edit fstab: `sudo nano /etc/fstab` tambahkan baris:  
-    `UUID=<UUIDSDB4> /mnt/potion-data ext4 defaults,noatime 0 2`
+    `UUID=<UUIDSDB4> /mnt/dre ext4 defaults,noatime 0 2`
   - Mount ulang: `sudo mount -a` (cek error), lalu `df -h`.
 
 4) **Buat folder aplikasi**  
@@ -296,9 +296,9 @@ sudo chown -R dre:dre /opt/potion-runner
 
 5) **Symlink ke HDD** (opsional tapi disarankan)  
 ```
-mkdir -p /mnt/potion-data/potion-runner-{logs,backups}
-ln -s /mnt/potion-data/potion-runner-logs /opt/potion-runner/logs
-ln -s /mnt/potion-data/potion-runner-backups /opt/potion-runner/backups
+mkdir -p /mnt/dre/potion-runner-{logs,backups}
+ln -s /mnt/dre/potion-runner-logs /opt/potion-runner/logs
+ln -s /mnt/dre/potion-runner-backups /opt/potion-runner/backups
 ```
 *Log & backup mengalir ke HDD, SSD tetap lega.*
 

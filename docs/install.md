@@ -1,6 +1,6 @@
 # Instalasi Potion Runner Bot (Ubuntu 24.04 LTS)
 
-Panduan ini mengikuti PRD potion runner dan ditulis untuk pengguna pemula Linux. Seluruh perintah dijalankan pada laptop ASUS X450L via SSH (user `dre`).
+Panduan ini mengikuti PRD potion runner dan ditulis untuk pengguna pemula Linux. Seluruh perintah dijalankan pada **Server Potion** (setara VPS i5-4210u, RAM 8GB, SSD 256GB, HDD 500GB) via SSH (user `dre`).
 
 ## 1. Update Sistem
 ```bash
@@ -19,7 +19,7 @@ sudo apt install -y smartmontools tailscale speedtest-cli
 - `lm-sensors` membaca suhu (jalankan `sudo sensors-detect`).
 - `acl` membantu pengelolaan izin file.
 
-## 3. Siapkan HDD 500 GB (`/mnt/potion-data`)
+## 3. Siapkan HDD 500 GB (`/mnt/dre`)
 1. Cek partisi:
    ```bash
    lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT,UUID
@@ -34,11 +34,11 @@ sudo apt install -y smartmontools tailscale speedtest-cli
    ```
 4. Tambahkan ke `/etc/fstab`:
    ```
-   UUID=<UUIDSDB4> /mnt/potion-data ext4 defaults,noatime 0 2
+   UUID=<UUIDSDB4> /mnt/dre ext4 defaults,noatime 0 2
    ```
 5. Mount ulang dan verifikasi:
    ```bash
-   sudo mkdir -p /mnt/potion-data
+   sudo mkdir -p /mnt/dre
    sudo mount -a
    df -h
    ```
@@ -59,9 +59,9 @@ APP_DIR=/opt/potion-runner SERVICE_USER=dre ./scripts/install.sh
 
 ## 5. Opsional: Symlink Logs & Backup ke HDD
 ```bash
-mkdir -p /mnt/potion-data/potion-runner-{logs,backups}
-ln -s /mnt/potion-data/potion-runner-logs /opt/potion-runner/logs
-ln -s /mnt/potion-data/potion-runner-backups /opt/potion-runner/backups
+mkdir -p /mnt/dre/potion-runner-{logs,backups}
+ln -s /mnt/dre/potion-runner-logs /opt/potion-runner/logs
+ln -s /mnt/dre/potion-runner-backups /opt/potion-runner/backups
 ```
 
 ## 6. Buat Virtualenv & Install Dependensi

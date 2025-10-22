@@ -11,6 +11,7 @@ from ..utils.format import human_bytes
 
 
 def is_mounted(path: Path) -> bool:
+    """Check if a given path is a mount point."""
     for part in psutil.disk_partitions(all=False):
         if Path(part.mountpoint) == path:
             return True
@@ -18,6 +19,7 @@ def is_mounted(path: Path) -> bool:
 
 
 def hdd_status(settings: Settings) -> Dict[str, str]:
+    """Get the status of the configured HDD mount point."""
     mount = settings.hdd_mount
     info = {
         "mount": str(mount),
@@ -40,6 +42,7 @@ def hdd_status(settings: Settings) -> Dict[str, str]:
 
 
 def list_partitions() -> List[dict[str, str]]:
+    """List all disk partitions."""
     partitions = []
     for part in psutil.disk_partitions(all=True):
         partitions.append(

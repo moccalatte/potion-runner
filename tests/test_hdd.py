@@ -27,7 +27,7 @@ def test_hdd_status(mock_psutil):
         backup_dir=Path("."),
         manifests_dir=Path("."),
         snapshots_dir=Path("."),
-        hdd_mount=Path("/mnt/potion-data"),
+        hdd_mount=Path("/mnt/dre"),
         services_whitelist=[],
         self_service="",
         runtime_log=Path("."),

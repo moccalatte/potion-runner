@@ -46,7 +46,6 @@ from .utils.logging import get_logger, log_action, setup_logging
 
 logger = get_logger(__name__)
 _PROCESS_LOCK_FD: int | None = None
-_PROCESS_LOCK_FD: int | None = None
 
 
 async def health_check_job(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -321,13 +320,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-def _release_process_lock() -> None:
-    global _PROCESS_LOCK_FD
-    if _PROCESS_LOCK_FD is None:
-        return
-    try:
-        fcntl.flock(_PROCESS_LOCK_FD, fcntl.LOCK_UN)
-    finally:
-        os.close(_PROCESS_LOCK_FD)
-        _PROCESS_LOCK_FD = None

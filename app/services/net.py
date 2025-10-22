@@ -20,6 +20,7 @@ class IPInterface:
 
 
 async def ip_info() -> List[IPInterface]:
+    """Get a list of network interfaces and their IP addresses."""
     interfaces: list[IPInterface] = []
     for name, addrs in psutil.net_if_addrs().items():
         addresses: list[str] = []
@@ -32,6 +33,7 @@ async def ip_info() -> List[IPInterface]:
 
 
 async def ping(host: str, *, count: int = 4, deadline: int = 20) -> CommandResult:
+    """Ping a host and return the result."""
     return await run_cmd(
         (
             "ping",
@@ -46,6 +48,7 @@ async def ping(host: str, *, count: int = 4, deadline: int = 20) -> CommandResul
 
 
 async def tailscale_status() -> str:
+    """Get the status of the Tailscale service."""
     if shutil.which("tailscale") is None:
         return "Tailscale belum terpasang. Lewati langkah ini jika tidak perlu."
     result = await run_cmd(("tailscale", "status"), check=False)
@@ -53,6 +56,7 @@ async def tailscale_status() -> str:
 
 
 async def speed_quick() -> str:
+    """Run a quick speed test and return the results."""
     if shutil.which("speedtest"):
         cli_args = ("speedtest", "--json")
         result = await run_cmd(cli_args, check=False)
@@ -71,6 +75,7 @@ async def speed_quick() -> str:
 
 
 async def default_gateway() -> str:
+    """Get the default gateway."""
     net_io = psutil.net_if_stats()
     lines = [f"{name}: up" if stats.isup else f"{name}: down" for name, stats in net_io.items()]
     return "\n".join(lines)
