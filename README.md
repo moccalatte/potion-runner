@@ -1,97 +1,160 @@
 # Potion Runner Bot
 
-Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengontrol node MCP/RAG pada **Server Potion** (setara VPS i5-4210u, RAM 8GB, SSD 256GB, HDD 500GB). Proyek ini mengikuti _PRD potion runner_ dan memprioritaskan pengalaman pengguna ramah, logging real-time, backup otomatis, serta watchdog alert.
+Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengontrol node MCP/RAG pada **Server Potion** (setara VPS i5-4210u, RAM 8GB, SSD 256GB, HDD 500GB). Proyek ini memprioritaskan pengalaman pengguna yang ramah, logging real-time, backup otomatis, serta watchdog alert.
 
 ## Fitur Utama
-- **Monitoring cepat**: CPU, RAM, disk (root & HDD), uptime, suhu (jika sensor), status layanan whitelist.
-- **Kontrol aman**: start/stop/restart service systemd, update apt/pip/git dengan konfirmasi, audit log aksi.
-- **Manajemen log**: tail runtime, grep error, kirim file log, akses journalctl service.
-- **Backup rsync**: snapshot harian ke HDD `/mnt/dre`, manifest checksum, verifikasi.
-- **Network tools**: info IP, ping host favorit, status Tailscale, speed test berbasis `speedtest-cli` (opsional).
-- **Alert & watchdog**: deteksi CPU/RAM/Disk/Suhu/Service fail dengan hysteresis, tulis `last_health.json`, kirim notifikasi ke admin.
-- **Pengaturan dinamis**: jadwal backup, threshold alert, dan whitelist service dapat diperbarui langsung dari bot (persist ke `.env`).
-- **UI santai**: semua respons pakai gaya engineer friendly ala kurir digital supaya enak dibaca user.
-- **Service control aman**: sistem mengharuskan sudo tanpa password untuk service whitelisted, dengan fallback log jika izin belum disetup.
+- **Monitoring Cepat**: CPU, RAM, disk (root & HDD), uptime, suhu, status layanan.
+- **Kontrol Aman**: Start/stop/restart service systemd, update terjadwal, audit log.
+- **Manajemen Log**: Tail runtime, grep error, kirim file log, akses journalctl.
+- **Backup Rsync**: Snapshot harian ke HDD (`/mnt/dre`), verifikasi checksum.
+- **Network Tools**: Info IP, ping, status Tailscale, speed test.
+- **Alert & Watchdog**: Deteksi anomali resource (CPU/RAM/Disk/Suhu) dan service down.
+- **Pengaturan Dinamis**: Jadwal backup, threshold alert, dan whitelist service bisa diubah dari bot.
 
-## Struktur Folder
-```
-/opt/potion-runner/
-├─ app/
-│  ├─ bot.py
-│  ├─ config.py
-│  ├─ menus.py
-│  ├─ handlers/
-│  ├─ services/
-│  └─ utils/
-├─ logs/
-├─ backups/
-│  ├─ manifests/
-│  └─ snapshots/
-├─ requirements.lock
-└─ .env
-```
-Semua path dapat dikustom melalui `.env`.
+---
 
-## Instalasi
-Ikuti panduan langkah demi langkah pada [`docs/install.md`](docs/install.md). File tersebut menjelaskan:
-1. Paket apt wajib.
-2. Persiapan HDD 500 GB & fstab.
-3. Pembuatan venv dan instal dependensi.
-4. Penempatan kode ke `APP_DIR` (default `/opt/potion-runner/`).
-5. Konfigurasi `.env`, logrotate, dan systemd service+timer.
-6. Konfigurasi sudoers agar user service bisa menjalankan `systemctl start/stop/restart` untuk layanan whitelist tanpa password.
-7. (Opsional) Atur `SELF_SERVICE` di `.env` kalau nama unit bot berbeda dari `potion-runner.service`.
-8. Untuk debug manual tanpa mematikan service, set `POTION_FORCE_RUN=1` sebelum `python -m app.bot` (pastikan instance lain sudah berhenti agar tidak ada konflik).
+## Instalasi (untuk Ubuntu 24.04 LTS)
 
-## Menjalankan Bot Secara Manual
-```bash
-source /opt/potion-runner/venv/bin/activate
-python -m app.bot
-```
-Pastikan `.env` berisi `BOT_TOKEN` dan `ADMIN_IDS` minimal satu ID admin. Dependensi `python-telegram-bot` dipasang dengan ekstra `job-queue`, sehingga APScheduler tersedia untuk JobQueue internal. Format jadwal backup gunakan `HH:MM` (koma/ titik otomatis dikonversi).
-Jika service systemd sudah aktif, hindari menjalankan `python -m app.bot` secara bersamaan karena Telegram hanya menerima satu koneksi polling.
+Panduan ini dirancang untuk pemula dan mencakup semua langkah yang diperlukan untuk menjalankan bot secara stabil.
 
-## Menu & Perintah Penting
-- `/start`, tombol ReplyKeyboard utama.
-- `/status`, ringkas monitoring.
-- `/svc <aksi> <service>`, kontrol service (admin).
-- `/svc_list`, daftar whitelist dengan status terkini.
-- `/backup_now`, `/backup_list`, `/backup_verify`.
-- `/log_runtime`, `/log_journal <service>`.
-- `/ping [host]`, `/speed`, `/tailscale`.
-- `/apt_update`, `/pip_sync`, `/git_pull`.
-- `/set_backup HH:MM`, `/alerts`, `/alert_disable <kode> <menit>`.
-- `/set_threshold <metric> <nilai>`, kelola ambang alert.
-- `/svc_add <service>`, `/svc_remove <service>` untuk update whitelist.
-- `/uptime`, detail uptime + suhu.
+### Langkah 1: Persiapan Awal
 
-## File Pendukung Sistem
-Templates tersedia di folder `ops/`:
-- `ops/systemd/potion-runner.service`
-- `ops/systemd/potion-runner-backup.service`
-- `ops/systemd/potion-runner-backup.timer`
-- `ops/systemd/potion-runner-health.service`
-- `ops/systemd/potion-runner-health.timer`
-- `ops/logrotate/potion-runner`
+1.  **Update Sistem**: Pastikan server Anda menggunakan paket terbaru.
+    ```bash
+    sudo apt update && sudo apt upgrade -y
+    ```
 
-Skrip pendukung:
-- `scripts/update_timer.py` untuk sinkron jadwal timer systemd (dijalankan via sudo).
+2.  **Install Dependensi**: Pasang semua paket yang dibutuhkan oleh bot.
+    ```bash
+    sudo apt install -y python3-venv python3-pip git rsync
+    # Opsional (tapi direkomendasikan):
+    sudo apt install -y lm-sensors smartmontools tailscale speedtest-cli
+    ```
 
-Salin ke `/etc/systemd/system/` dan `/etc/logrotate.d/` sesuai petunjuk instalasi.
+### Langkah 2: Siapkan HDD untuk Data Aplikasi
 
-## Logging & Audit
-- `logs/runtime.log` → log aplikasi real-time (rotate via logrotate).
-- `logs/actions.log` → catatan siapa melakukan aksi apa.
-- `journalctl -u potion-runner` → debug cepat service systemd.
+Semua data (log, backup, config) akan disimpan di `/mnt/dre` untuk memisahkan data dari sistem operasi dan kode aplikasi.
 
-## Backup & Restore
-- Snapshot disimpan pada `backups/snapshots/<timestamp>`.
-- Manifest checksum di `backups/manifests/<timestamp>.json`.
-- Perintah manual tersedia di bot melalui menu Backup.
+1.  **Cek Partisi**: Lihat daftar partisi untuk menemukan HDD target.
+    ```bash
+    lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT,UUID
+    ```
 
-## Kode Gaya & Kontribusi
-- Python 3.12+, async/await.
-- File < 300 baris, modular (handlers/services/utils).
-- Gunakan `run_cmd` wrapper untuk panggilan shell.
+2.  **Format (Jika Perlu)**: Jika HDD belum diformat, format sebagai `ext4`. **Peringatan: Ini akan menghapus semua data di partisi tersebut.**
+    ```bash
+    sudo mkfs.ext4 -L POTIONDATA /dev/sdXN # Ganti /dev/sdXN dengan partisi Anda
+    ```
+
+3.  **Mount Otomatis**: Konfigurasikan `fstab` agar HDD termount saat boot.
+    *   Dapatkan UUID partisi: `sudo blkid /dev/sdXN`
+    *   Edit `/etc/fstab`: `sudo nano /etc/fstab`
+    *   Tambahkan baris berikut (ganti `<UUID_HDD_ANDA>` dengan UUID dari langkah sebelumnya):
+        ```
+        UUID=<UUID_HDD_ANDA> /mnt/dre ext4 defaults,noatime 0 2
+        ```
+    *   Mount dan verifikasi:
+        ```bash
+        sudo mkdir -p /mnt/dre
+        sudo mount -a
+        df -h # Pastikan /mnt/dre sudah muncul
+        ```
+
+### Langkah 3: Install Potion Runner Bot
+
+Gunakan skrip instalasi yang sudah disediakan untuk otomatisasi.
+
+1.  **Clone Repositori**:
+    ```bash
+    git clone https://github.com/username/potion-runner.git # Ganti dengan URL repo Anda
+    cd potion-runner
+    ```
+
+2.  **Jalankan Skrip Instalasi**:
+    *   `SERVICE_USER` adalah user yang akan menjalankan bot (disarankan bukan `root`).
+    *   `APP_DIR` adalah lokasi kode aplikasi (default: `/opt/potion-runner`).
+    *   `DATA_DIR` adalah lokasi data (default: `/mnt/dre/potion-runner`).
+    ```bash
+    # Jalankan sebagai user biasa (bukan root)
+    ./scripts/install.sh
+    ```
+    Skrip ini akan:
+    *   Menyalin kode aplikasi ke `/opt/potion-runner`.
+    *   Membuat direktori data di `/mnt/dre/potion-runner`.
+    *   Mengatur kepemilikan file (`chown`) agar sesuai dengan `SERVICE_USER`.
+    *   Membuat virtual environment Python dan menginstall dependensi.
+    *   Menyalin file `.env.example` ke `/mnt/dre/potion-runner/.env`.
+    *   Menginstall service `systemd` dan `logrotate` untuk otomatisasi.
+    *   Mengaktifkan dan menjalankan service bot.
+
+### Langkah 4: Konfigurasi Bot
+
+1.  **Edit File `.env`**: Buka file konfigurasi dan isi nilainya.
+    ```bash
+    nano /mnt/dre/potion-runner/.env
+    ```
+    *   `BOT_TOKEN`: Token bot dari BotFather Telegram.
+    *   `ADMIN_IDS`: ID user Telegram Anda (bisa lebih dari satu, pisahkan dengan koma). Dapatkan dari bot seperti `@userinfobot`.
+
+2.  **Restart Bot**: Terapkan konfigurasi baru dengan me-restart service.
+    ```bash
+    sudo systemctl restart potion-runner.service
+    ```
+
+### Langkah 5: Konfigurasi Izin `sudo` (Penting!)
+
+Agar bot bisa me-restart service lain, Anda perlu memberikan izin `sudo` tanpa password untuk perintah tertentu.
+
+1.  **Buat File Sudoers**:
+    ```bash
+    sudo nano /etc/sudoers.d/potion-runner
+    ```
+
+2.  **Tambahkan Aturan**:
+    *   Ganti `your_user` dengan user yang menjalankan bot (`SERVICE_USER`).
+    *   Tambahkan semua service yang ingin Anda kontrol dari bot ke dalam daftar.
+    ```
+    your_user ALL=(root) NOPASSWD: /usr/bin/systemctl start SERVICE_1, /usr/bin/systemctl stop SERVICE_1, /usr/bin/systemctl restart SERVICE_1, /usr/bin/systemctl start SERVICE_2, /usr/bin/systemctl stop SERVICE_2, /usr/bin/systemctl restart SERVICE_2
+    ```
+    **Contoh**:
+    ```
+    dre ALL=(root) NOPASSWD: /usr/bin/systemctl start n8n.service, /usr/bin/systemctl stop n8n.service, /usr/bin/systemctl restart n8n.service
+    ```
+
+3.  **Setel Izin File**:
+    ```bash
+    sudo chmod 440 /etc/sudoers.d/potion-runner
+    ```
+
+### Langkah 6: Verifikasi
+
+1.  **Cek Status Service**:
+    ```bash
+    systemctl status potion-runner.service
+    # Harusnya menampilkan "active (running)"
+    ```
+
+2.  **Lihat Log**:
+    ```bash
+    journalctl -u potion-runner -f
+    ```
+
+3.  **Buka Bot Telegram**: Kirim `/start` ke bot Anda. Jika semua berjalan lancar, menu utama akan muncul.
+
+---
+
+## Struktur Direktori
+
+*   **Kode Aplikasi**: `/opt/potion-runner/`
+*   **Data, Log, & Backup**: `/mnt/dre/potion-runner/`
+
+## Operasional Harian
+- **Restart Bot**: `sudo systemctl restart potion-runner`
+- **Lihat Log**: `journalctl -u potion-runner -f`
+- **Update Bot**:
+  ```bash
+  cd /opt/potion-runner
+  git pull
+  sudo systemctl restart potion-runner
+  ```
 
 Selamat menggunakan Potion Runner Bot! 🧪

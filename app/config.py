@@ -124,7 +124,7 @@ def load_settings(env_path: Path | None = None) -> Settings:
     env_path = env_path or Path(".env")
     raw_env = _load_raw_env(env_path)
 
-    data_dir = Path(raw_env.get("DATA_DIR", "/opt/potion-runner"))
+    data_dir = Path(raw_env.get("DATA_DIR", "/mnt/dre/potion-runner"))
     log_dir = Path(raw_env.get("LOG_DIR", str(data_dir / "logs")))
     backup_dir = Path(raw_env.get("BACKUP_DIR", str(data_dir / "backups")))
     manifests_dir = backup_dir / "manifests"

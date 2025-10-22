@@ -106,12 +106,13 @@
    └─ snapshots/             # hasil rsync per tanggal
 ```
 
-**Data di HDD** (direkomendasikan): mount ke `/mnt/dre` lalu symlink:
+**Data di HDD**: Semua data aplikasi seperti log dan backup disimpan di `/mnt/dre/potion-runner`.
+Direktori aplikasi (`/opt/potion-runner`) hanya berisi kode dan virtual environment.
 ```
-/mnt/dre/
-├─ potion-runner-logs/      → symlink dari /opt/potion-runner/logs
-├─ potion-runner-backups/   → symlink dari /opt/potion-runner/backups
-└─ dumps/
+/mnt/dre/potion-runner/
+├─ logs/
+├─ backups/
+└─ .env
 ```
 
 ---
@@ -132,9 +133,9 @@
 ```
 BOT_TOKEN="123:ABC..."           # token Telegram
 ADMIN_IDS="12345678,87654321"    # CSV user id yang boleh pakai fitur kritikal
-DATA_DIR="/opt/potion-runner"    # root app
-LOG_DIR="/opt/potion-runner/logs"
-BACKUP_DIR="/opt/potion-runner/backups"
+DATA_DIR="/mnt/dre/potion-runner"    # root app
+LOG_DIR="/mnt/dre/potion-runner/logs"
+BACKUP_DIR="/mnt/dre/potion-runner/backups"
 HDD_MOUNT="/mnt/dre"     # target mount hdd
 SERVICES_WHITELIST="potion-runner.service,cloudflared.service,n8n.service"
 SELF_SERVICE="potion-runner.service"      # nama unit bot sendiri untuk restart otomatis
@@ -263,76 +264,9 @@ WantedBy=multi-user.target
 
 ---
 
-## 12) Instalasi — Step by Step (awam)
+## 12) Instalasi
 
-> Tujuan: siapkan venv, mount HDD, jalankan bot sebagai service.
-
-1) **Update sistem**  
-- `sudo apt update && sudo apt upgrade -y`  
-*Memperbarui daftar paket & memasang rilis terbaru yang aman.*
-
-2) **Paket wajib**  
-- `sudo apt install -y python3-venv python3-pip git rsync lm-sensors acl`  
-*`venv/pip` untuk Python, `git` ambil kode, `rsync` untuk backup, `lm-sensors` baca suhu, `acl` izin file lebih fleksibel.*
-
-3) **Siapkan HDD 500 GB**  
-- Cek partisi: `lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT,UUID`  
-- Pilih `sdb4` **atau** `sdb5`. Jika belum ext4 → format:  
-  `sudo mkfs.ext4 -L POTIONDATA /dev/sdb4`  
-  *Membuat sistem file ext4 bernama POTIONDATA.*
-- Buat mount point & mount by UUID (lebih stabil):
-  - `sudo mkdir -p /mnt/dre`
-  - Dapatkan UUID: `sudo blkid /dev/sdb4`
-  - Edit fstab: `sudo nano /etc/fstab` tambahkan baris:  
-    `UUID=<UUIDSDB4> /mnt/dre ext4 defaults,noatime 0 2`
-  - Mount ulang: `sudo mount -a` (cek error), lalu `df -h`.
-
-4) **Buat folder aplikasi**  
-```
-sudo mkdir -p /opt/potion-runner/{app,logs,backups}
-sudo chown -R dre:dre /opt/potion-runner
-```
-*`/opt` untuk aplikasi pihak ketiga; owner `dre` agar tidak jalan sebagai root.*
-
-5) **Symlink ke HDD** (opsional tapi disarankan)  
-```
-mkdir -p /mnt/dre/potion-runner-{logs,backups}
-ln -s /mnt/dre/potion-runner-logs /opt/potion-runner/logs
-ln -s /mnt/dre/potion-runner-backups /opt/potion-runner/backups
-```
-*Log & backup mengalir ke HDD, SSD tetap lega.*
-
-6) **Buat venv & install deps**  
-```
-python3 -m venv /opt/potion-runner/venv
-/opt/potion-runner/venv/bin/pip install --upgrade pip
-/opt/potion-runner/venv/bin/pip install "python-telegram-bot~=21.6" psutil python-dotenv aiofiles PyYAML
-```
-*`venv` membuat lingkungan Python terpisah. PTB v21 dipilih untuk kestabilan.*
-
-7) **Siapkan kerangka kode**  
-- Inisialisasi repo (clone atau `git init`).
-- Tambah file sesuai **Struktur Folder** di atas.
-- Buat `.env` dengan permission aman:
-  `install -m 600 /dev/null /opt/potion-runner/.env && nano /opt/potion-runner/.env`.
-
-8) **Konfigurasi logrotate**  
-- Tambahkan file `/etc/logrotate.d/potion-runner` dengan isi pada bagian Logrotate di atas.
-
-9) **Buat systemd unit**  
-- Simpan file sebagai `/etc/systemd/system/potion-runner.service` (isi seperti di atas).  
-- `sudo systemctl daemon-reload`  
-- `sudo systemctl enable --now potion-runner`  
-- Cek: `systemctl status potion-runner` (pastikan **active (running)**).
-
-10) **Sensors** (opsional untuk suhu)
-- Jalankan: `sudo sensors-detect` → pilih default aman.
-
-11) **Uji alur**
-- `/start` → tampil menu.
-- Tekan **📊 Status** → harus keluar ringkasan.
-- Coba **📜 Logs → Tail runtime** → kirim potongan log.
-- Coba **💾 Backup → Backup now** → lihat snapshot di HDD.
+Panduan instalasi lengkap kini tersedia di file [README.md](README.md) utama. Dokumen tersebut berisi petunjuk langkah demi langkah yang ramah pemula, mulai dari persiapan server hingga verifikasi akhir.
 
 ---
 
