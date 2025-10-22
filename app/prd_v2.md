@@ -30,7 +30,7 @@
 - **fstab** mount HDD 500 GB by UUID → `/mnt/dre` (ext4, `noatime`), folder data: backups, logs, dumps.
 
 **Layer 2 – Runtime Aplikasi (Python venv)**
-- Python 3.12+, `venv` terisolasi: `/opt/potion-runner/venv`.
+- Python 3.12+, `venv` terisolasi: `/mnt/dre/potion-runner/venv`.
 - Library utama: **python-telegram-bot v21+ (async)**, `psutil`, `python-dotenv`, `aiofiles`, `pyyaml`.
 - Struktur repo standar, logging konsol + file `runtime.log` (rotated) **realtime**.
 
@@ -70,7 +70,7 @@
 ## 4) Struktur Folder & File
 
 ```
-/opt/potion-runner/
+/mnt/dre/potion-runner/
 ├─ app/
 │  ├─ bot.py                 # titik masuk bot (async PTB)
 │  ├─ config.py              # load .env, path, constants
@@ -107,7 +107,7 @@
 ```
 
 **Data di HDD**: Semua data aplikasi seperti log dan backup disimpan di `/mnt/dre/potion-runner`.
-Direktori aplikasi (`/opt/potion-runner`) hanya berisi kode dan virtual environment.
+Direktori aplikasi (`/mnt/dre/potion-runner`) berisi semua file, termasuk kode dan virtual environment.
 ```
 /mnt/dre/potion-runner/
 ├─ logs/
@@ -195,7 +195,7 @@ SELF_SERVICE="potion-runner.service"      # unit bot sendiri buat restart otomat
 
 **Contoh logrotate `/etc/logrotate.d/potion-runner`**
 ```
-/opt/potion-runner/logs/*.log {
+/mnt/dre/potion-runner/logs/*.log {
     daily
     rotate 10
     size 10M
@@ -213,8 +213,8 @@ SELF_SERVICE="potion-runner.service"      # unit bot sendiri buat restart otomat
 **Ruang HDD**: gunakan partisi `sdb4` (270 GB) atau `sdb5` (194 GB) → format ext4 dan mount ke `/mnt/dre`.
 
 **Isi backup**
-- `/opt/potion-runner/app` (kode & config non‑secret), `requirements.lock`.
-- `/opt/potion-runner/logs`.
+- `/mnt/dre/potion-runner/app` (kode & config non‑secret), `requirements.lock`.
+- `/mnt/dre/potion-runner/logs`.
 - File konfigurasi penting (unit systemd, fstab snippet) → `backups/manifests`.
 
 **Jadwal**
@@ -243,9 +243,9 @@ Wants=network-online.target
 
 [Service]
 User=dre
-WorkingDirectory=/opt/potion-runner
+WorkingDirectory=/mnt/dre/potion-runner
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/opt/potion-runner/venv/bin/python -m app.bot
+ExecStart=/mnt/dre/potion-runner/venv/bin/python -m app.bot
 Restart=always
 RestartSec=5
 WatchdogSec=60
@@ -299,7 +299,7 @@ Panduan instalasi lengkap kini tersedia di file [README.md](../README.md) utama.
 ## 15) Operasional Harian (cheats)
 
 - Lihat status service: `systemctl status potion-runner`.
-- Lihat log live: `journalctl -u potion-runner -f` **atau** `tail -f /opt/potion-runner/logs/runtime.log`.
+- Lihat log live: `journalctl -u potion-runner -f` **atau** `tail -f /mnt/dre/potion-runner/logs/runtime.log`.
 - Restart bot: `sudo systemctl restart potion-runner`.
 - Trigger backup manual: tombol bot **💾 Backup now**.
 

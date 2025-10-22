@@ -1,4 +1,4 @@
-/opt/potion-runner/logs/*.log {
+/mnt/dre/potion-runner/logs/*.log {
     daily
     rotate 10
     size 10M

@@ -15,7 +15,7 @@ Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengont
 
 ## Instalasi (untuk Ubuntu 24.04 LTS)
 
-Panduan ini dirancang untuk pemula dan mencakup semua langkah yang diperlukan untuk menjalankan bot secara stabil.
+Panduan ini dirancang untuk pemula dan mencakup semua langkah yang diperlukan untuk menjalankan bot secara stabil. Semua file aplikasi dan data akan disimpan di `/mnt/dre/potion-runner`.
 
 ### Langkah 1: Persiapan Awal
 
@@ -31,26 +31,26 @@ Panduan ini dirancang untuk pemula dan mencakup semua langkah yang diperlukan un
     sudo apt install -y lm-sensors smartmontools tailscale speedtest-cli
     ```
 
-### Langkah 2: Siapkan HDD untuk Data Aplikasi
+### Langkah 2: Siapkan HDD (`/mnt/dre`)
 
-Semua data (log, backup, config) akan disimpan di `/mnt/dre` untuk memisahkan data dari sistem operasi dan kode aplikasi.
+Aplikasi ini dirancang untuk berjalan sepenuhnya dari HDD yang di-mount di `/mnt/dre`.
 
-1.  **Cek Partisi**: Lihat daftar partisi untuk menemukan HDD target.
+1.  **Cek Partisi**: Lihat daftar partisi untuk menemukan HDD target. Partisi yang disarankan adalah `/dev/sdb1`.
     ```bash
     lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT,UUID
     ```
 
-2.  **Format (Jika Perlu)**: Jika HDD belum diformat, format sebagai `ext4`. **Peringatan: Ini akan menghapus semua data di partisi tersebut.**
+2.  **Format (Jika Perlu)**: Jika `/dev/sdb1` belum diformat, format sebagai `ext4`. **Peringatan: Ini akan menghapus semua data di partisi tersebut.**
     ```bash
-    sudo mkfs.ext4 -L POTIONDATA /dev/sdXN # Ganti /dev/sdXN dengan partisi Anda
+    sudo mkfs.ext4 -L POTIONDATA /dev/sdb1
     ```
 
 3.  **Mount Otomatis**: Konfigurasikan `fstab` agar HDD termount saat boot.
-    *   Dapatkan UUID partisi: `sudo blkid /dev/sdXN`
+    *   Dapatkan UUID partisi: `sudo blkid /dev/sdb1`
     *   Edit `/etc/fstab`: `sudo nano /etc/fstab`
-    *   Tambahkan baris berikut (ganti `<UUID_HDD_ANDA>` dengan UUID dari langkah sebelumnya):
+    *   Tambahkan baris berikut (ganti `<UUID_ANDA>` dengan UUID dari langkah sebelumnya):
         ```
-        UUID=<UUID_HDD_ANDA> /mnt/dre ext4 defaults,noatime 0 2
+        UUID=<UUID_ANDA> /mnt/dre ext4 defaults,noatime 0 2
         ```
     *   Mount dan verifikasi:
         ```bash
@@ -65,25 +65,24 @@ Gunakan skrip instalasi yang sudah disediakan untuk otomatisasi.
 
 1.  **Clone Repositori**:
     ```bash
-    git clone https://github.com/username/potion-runner.git # Ganti dengan URL repo Anda
+    cd /mnt/dre
+    git clone https://github.com/moccalatte/potion-runner.git
     cd potion-runner
     ```
 
 2.  **Jalankan Skrip Instalasi**:
-    *   `SERVICE_USER` adalah user yang akan menjalankan bot (disarankan bukan `root`).
-    *   `APP_DIR` adalah lokasi kode aplikasi (default: `/opt/potion-runner`).
-    *   `DATA_DIR` adalah lokasi data (default: `/mnt/dre/potion-runner`).
+    *   Skrip ini akan menginstal semua komponen ke dalam `/mnt/dre/potion-runner`.
+    *   Pastikan Anda menjalankannya dari dalam direktori repositori.
     ```bash
     # Jalankan sebagai user biasa (bukan root)
     ./scripts/install.sh
     ```
     Skrip ini akan:
-    *   Menyalin kode aplikasi ke `/opt/potion-runner`.
-    *   Membuat direktori data di `/mnt/dre/potion-runner`.
-    *   Mengatur kepemilikan file (`chown`) agar sesuai dengan `SERVICE_USER`.
+    *   Membuat direktori yang diperlukan (`logs`, `backups`, dll.).
+    *   Mengatur kepemilikan file (`chown`) agar sesuai dengan user Anda.
     *   Membuat virtual environment Python dan menginstall dependensi.
-    *   Menyalin file `.env.example` ke `/mnt/dre/potion-runner/.env`.
-    *   Menginstall service `systemd` dan `logrotate` untuk otomatisasi.
+    *   Menyalin file `.env.example` ke `.env`.
+    *   Menginstall dan mengonfigurasi service `systemd` dan `logrotate`.
     *   Mengaktifkan dan menjalankan service bot.
 
 ### Langkah 4: Konfigurasi Bot
@@ -102,7 +101,7 @@ Gunakan skrip instalasi yang sudah disediakan untuk otomatisasi.
 
 ### Langkah 5: Konfigurasi Izin `sudo` (Penting!)
 
-Agar bot bisa me-restart service lain, Anda perlu memberikan izin `sudo` tanpa password untuk perintah tertentu.
+Agar bot bisa me-restart service lain, Anda perlu memberikan izin `sudo` tanpa password.
 
 1.  **Buat File Sudoers**:
     ```bash
@@ -110,10 +109,10 @@ Agar bot bisa me-restart service lain, Anda perlu memberikan izin `sudo` tanpa p
     ```
 
 2.  **Tambahkan Aturan**:
-    *   Ganti `your_user` dengan user yang menjalankan bot (`SERVICE_USER`).
-    *   Tambahkan semua service yang ingin Anda kontrol dari bot ke dalam daftar.
+    *   Ganti `your_user` dengan user yang menjalankan bot (kemungkinan besar user Anda saat ini).
+    *   Tambahkan semua service yang ingin Anda kontrol dari bot.
     ```
-    your_user ALL=(root) NOPASSWD: /usr/bin/systemctl start SERVICE_1, /usr/bin/systemctl stop SERVICE_1, /usr/bin/systemctl restart SERVICE_1, /usr/bin/systemctl start SERVICE_2, /usr/bin/systemctl stop SERVICE_2, /usr/bin/systemctl restart SERVICE_2
+    your_user ALL=(root) NOPASSWD: /usr/bin/systemctl start SERVICE_1, /usr/bin/systemctl stop SERVICE_1, /usr/bin/systemctl restart SERVICE_1
     ```
     **Contoh**:
     ```
@@ -144,15 +143,14 @@ Agar bot bisa me-restart service lain, Anda perlu memberikan izin `sudo` tanpa p
 
 ## Struktur Direktori
 
-*   **Kode Aplikasi**: `/opt/potion-runner/`
-*   **Data, Log, & Backup**: `/mnt/dre/potion-runner/`
+Semua file, termasuk kode, data, log, dan backup, berada di: `/mnt/dre/potion-runner/`
 
 ## Operasional Harian
 - **Restart Bot**: `sudo systemctl restart potion-runner`
-- **Lihat Log**: `journalctl -u potion-runner -f`
+- **Lihat Log**: `journalctl -u potion-runner -f` atau `tail -f /mnt/dre/potion-runner/logs/runtime.log`
 - **Update Bot**:
   ```bash
-  cd /opt/potion-runner
+  cd /mnt/dre/potion-runner
   git pull
   sudo systemctl restart potion-runner
   ```

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # --- Configuration ---
-APP_DIR="${APP_DIR:-/opt/potion-runner}"
+APP_DIR="${APP_DIR:-/mnt/dre/potion-runner}"
 DATA_DIR="${DATA_DIR:-/mnt/dre/potion-runner}"
 SERVICE_USER="${SERVICE_USER:-$USER}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

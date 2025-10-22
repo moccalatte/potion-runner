@@ -5,5 +5,5 @@ Wants=potion-runner.service
 [Service]
 Type=oneshot
 User=dre
-WorkingDirectory=/opt/potion-runner
-ExecStart=/opt/potion-runner/venv/bin/python /opt/potion-runner/scripts/health_ping.py
+WorkingDirectory=/mnt/dre/potion-runner
+ExecStart=/mnt/dre/potion-runner/venv/bin/python /mnt/dre/potion-runner/scripts/health_ping.py

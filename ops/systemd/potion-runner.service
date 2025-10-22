@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 User=dre
-WorkingDirectory=/opt/potion-runner
+WorkingDirectory=/mnt/dre/potion-runner
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/opt/potion-runner/venv/bin/python -m app.bot
+ExecStart=/mnt/dre/potion-runner/venv/bin/python -m app.bot
 Restart=always
 RestartSec=5
 WatchdogSec=60
