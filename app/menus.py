@@ -7,10 +7,18 @@ from telegram import ReplyKeyboardMarkup
 
 MAIN_MENU = ReplyKeyboardMarkup(
     [
-        ["📊 Status", "🧰 Kontrol"],
-        ["📜 Logs", "💾 Backup"],
-        ["🌐 Network", "🔄 Update"],
-        ["⚙️ Settings"],
+        ["📊 Status", "🧰 Kontrol", "🐳 Docker"],
+        ["📜 Logs", "💾 Backup", "🌐 Network"],
+        ["🔄 Update", "⚙️ Settings"],
+    ],
+    resize_keyboard=True,
+)
+
+DOCKER_MENU = ReplyKeyboardMarkup(
+    [
+        ["List Containers", "Stop Container"],
+        ["Restart Container", "Logs"],
+        ["Back to Main Menu"],
     ],
     resize_keyboard=True,
 )

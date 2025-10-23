@@ -16,6 +16,7 @@ from telegram.ext import (
     Application,
     CommandHandler,
     ContextTypes,
+    ConversationHandler,
     Defaults,
     MessageHandler,
     filters,
@@ -26,6 +27,7 @@ from .handlers import (
     admin,
     backup,
     controls,
+    docker,
     logs,
     monitoring,
     network,
@@ -213,6 +215,25 @@ def build_application(settings: Settings) -> Application:
     application.add_handler(MessageHandler(filters.Regex("^🌐 Network$"), network.network_menu))
     application.add_handler(MessageHandler(filters.Regex("^🔄 Update$"), updates.update_menu))
     application.add_handler(MessageHandler(filters.Regex("^⚙️ Settings$"), admin.settings_menu))
+    application.add_handler(MessageHandler(filters.Regex("^🐳 Docker$"), docker.docker_menu))
+
+    conv_handler = ConversationHandler(
+        entry_points=[
+            MessageHandler(filters.Regex("^Stop Container$"), docker.stop_container_start),
+            MessageHandler(filters.Regex("^Restart Container$"), docker.restart_container_start),
+            MessageHandler(filters.Regex("^Logs$"), docker.logs_container_start),
+        ],
+        states={
+            docker.CONTAINER_NAME_STOP: [MessageHandler(filters.TEXT & ~filters.COMMAND, docker.stop_container)],
+            docker.CONTAINER_NAME_RESTART: [MessageHandler(filters.TEXT & ~filters.COMMAND, docker.restart_container)],
+            docker.CONTAINER_NAME_LOGS: [MessageHandler(filters.TEXT & ~filters.COMMAND, docker.logs_container)],
+        },
+        fallbacks=[CommandHandler("cancel", docker.cancel)],
+    )
+    application.add_handler(conv_handler)
+    application.add_handler(MessageHandler(filters.Regex("^List Containers$"), docker.list_containers))
+    application.add_handler(MessageHandler(filters.Regex("^Back to Main Menu$"), start.start))
+
 
     application.add_handler(MessageHandler(filters.COMMAND, unknown_command))
     application.add_error_handler(error_handler)

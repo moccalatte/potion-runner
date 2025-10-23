@@ -6,6 +6,7 @@ Bot Telegram async berbasis `python-telegram-bot` v21 untuk memantau dan mengont
 - **Monitoring Cepat**: CPU, RAM, disk (root & HDD), uptime, suhu, status layanan.
 - **Kontrol Aman**: Start/stop/restart service systemd, update terjadwal, audit log.
 - **Manajemen Log**: Tail runtime, grep error, kirim file log, akses journalctl.
+- **Manajemen Docker**: List, stop, restart, dan lihat log kontainer Docker langsung dari bot.
 - **Backup Rsync**: Snapshot harian ke HDD (`/mnt/dre`), verifikasi checksum.
 - **Network Tools**: Info IP, ping, status Tailscale, speed test.
 - **Alert & Watchdog**: Deteksi anomali resource (CPU/RAM/Disk/Suhu) dan service down.
@@ -117,6 +118,7 @@ Agar bot bisa me-restart service lain, Anda perlu memberikan izin `sudo` tanpa p
     **Contoh**:
     ```
     dre ALL=(root) NOPASSWD: /usr/bin/systemctl start n8n.service, /usr/bin/systemctl stop n8n.service, /usr/bin/systemctl restart n8n.service
+    dre ALL=(root) NOPASSWD: /usr/bin/docker ps, /usr/bin/docker stop *, /usr/bin/docker restart *, /usr/bin/docker logs *
     ```
 
 3.  **Setel Izin File**:
