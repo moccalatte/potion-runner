@@ -14,6 +14,7 @@ from ..utils.shell import run_cmd
 
 
 async def network_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(PROCESSING)
     interfaces = await ip_info()
     summary = ["Interface aktif di server kamu:"]
     summary.extend(_format_interface_rows(interfaces))
@@ -47,44 +48,34 @@ async def speed_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     """Runs a speed test with real-time feedback."""
     user_id = update.effective_user.id
 
-    pending = await update.message.reply_text("Oke, mulai tes kecepatan... 💨")
+    pending = await update.message.reply_text("Oke, mulai tes kecepatan... 💨 Sabar ya, ini butuh waktu sekitar satu menit.")
     log_action("network.speed", user_id=user_id, result="start")
 
     try:
-        await pending.edit_text("Menguji kecepatan unduh... 📥")
-        # We run the simple test first to get a baseline
-        result = await run_cmd(["speedtest-cli", "--simple"], check=True, timeout=120)
+        # Menjalankan speedtest-cli dengan output JSON
+        result = await run_cmd(["speedtest-cli", "--json"], check=True, timeout=120)
 
-        await pending.edit_text("Menguji kecepatan unggah... 📤")
-        # Run again to get the final result, this is a limitation of speedtest-cli's output
-        result = await run_cmd(["speedtest-cli", "--simple"], check=True, timeout=120)
+        # Mengurai output JSON
+        import json
+        data = json.loads(result.stdout)
 
-        output = result.stdout
-        lines = [line.strip() for line in output.split('\n')]
-
-        def parse_line(key):
-            try:
-                line = next(l for l in lines if key in l)
-                return line.split(': ')[1]
-            except (StopIteration, IndexError):
-                return "N/A"
-
-        ping = parse_line("Ping")
-        download = parse_line("Download")
-        upload = parse_line("Upload")
+        # Mengambil dan memformat data
+        ping = data.get('ping', 'N/A')
+        download_speed = data.get('download', 0) / 1_000_000  # konversi ke Mbps
+        upload_speed = data.get('upload', 0) / 1_000_000  # konversi ke Mbps
 
         final_message = (
             f"Taraa! 🚀 Ini dia hasilnya:\n\n"
-            f"<b>Ping:</b> {ping}\n"
-            f"<b>Download:</b> {download}\n"
-            f"<b>Upload:</b> {upload}"
+            f"<b>Ping:</b> {ping:.2f} ms\n"
+            f"<b>Download:</b> {download_speed:.2f} Mbps\n"
+            f"<b>Upload:</b> {upload_speed:.2f} Mbps"
         )
 
         await pending.edit_text(wrap_success(final_message))
-        log_action("network.speed", user_id=user_id, result="ok", detail=output)
+        log_action("network.speed", user_id=user_id, result="ok", detail=result.stdout)
 
     except Exception as e:
-        error_message = f"Waduh, sepertinya ada masalah dengan `speedtest-cli`... 🤔\n\nError: {str(e)}"
+        error_message = f"Waduh, sepertinya ada masalah dengan `speedtest-cli`... 🤔\nPastikan `speedtest-cli` sudah terinstall di server.\n\nError: {str(e)}"
         await pending.edit_text(wrap_failure(error_message))
         log_action("network.speed", user_id=user_id, result="fail", detail=str(e))
 

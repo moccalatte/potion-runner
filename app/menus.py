@@ -16,9 +16,9 @@ MAIN_MENU = ReplyKeyboardMarkup(
 
 DOCKER_MENU = ReplyKeyboardMarkup(
     [
-        ["List Containers", "Stop Container"],
-        ["Restart Container", "Logs"],
-        ["Back to Main Menu"],
+        ["📋 List", "🛑 Stop"],
+        ["🔄 Restart", "📜 Logs"],
+        ["⬅️ Kembali"],
     ],
     resize_keyboard=True,
 )

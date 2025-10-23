@@ -28,30 +28,24 @@ def context():
 @patch("app.handlers.network.run_cmd")
 async def test_speed_command_success(run_cmd_mock, update, context):
     """Test the speed_command success flow."""
-    # Mock the return value of speedtest-cli
+    # Mock the return value of speedtest-cli with JSON output
     run_cmd_mock.return_value = MagicMock(
-        stdout="Ping: 10.0 ms\nDownload: 100.0 Mbit/s\nUpload: 50.0 Mbit/s",
+        stdout='{"ping": 10.0, "download": 100000000, "upload": 50000000}',
         returncode=0
     )
 
     await speed_command(update, context)
 
     # 1. Verify initial message
-    update.message.reply_text.assert_called_once_with("Oke, mulai tes kecepatan... 💨")
+    update.message.reply_text.assert_called_once_with("Oke, mulai tes kecepatan... 💨 Sabar ya, ini butuh waktu sekitar satu menit.")
 
-    # 2. Verify message edits
+    # 2. Verify final message edit
     pending_message = await update.message.reply_text()
-    expected_calls = [
-        call("Menguji kecepatan unduh... 📥"),
-        call("Menguji kecepatan unggah... 📤"),
-        call(
-            'Beres! ✅ Ringkasan: Taraa! 🚀 Ini dia hasilnya:\n\n'
-            '&lt;b&gt;Ping:&lt;/b&gt; 10.0 ms\n'
-            '&lt;b&gt;Download:&lt;/b&gt; 100.0 Mbit/s\n'
-            '&lt;b&gt;Upload:&lt;/b&gt; 50.0 Mbit/s'
-        )
-    ]
-    pending_message.edit_text.assert_has_calls(expected_calls, any_order=False)
+
+    final_call_args = pending_message.edit_text.call_args[0][0]
+    assert "10.00 ms" in final_call_args
+    assert "100.00 Mbps" in final_call_args
+    assert "50.00 Mbps" in final_call_args
 
 @patch("app.handlers.network.run_cmd")
 async def test_speed_command_failure(run_cmd_mock, update, context):
@@ -62,7 +56,7 @@ async def test_speed_command_failure(run_cmd_mock, update, context):
     await speed_command(update, context)
 
     # 1. Verify initial message
-    update.message.reply_text.assert_called_once_with("Oke, mulai tes kecepatan... 💨")
+    update.message.reply_text.assert_called_once_with("Oke, mulai tes kecepatan... 💨 Sabar ya, ini butuh waktu sekitar satu menit.")
 
     # 2. Verify error message edit
     pending_message = await update.message.reply_text()

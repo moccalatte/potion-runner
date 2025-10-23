@@ -224,9 +224,9 @@ def build_application(settings: Settings) -> Application:
 
     conv_handler = ConversationHandler(
         entry_points=[
-            MessageHandler(filters.Regex("^Stop Container$"), docker.stop_container_start),
-            MessageHandler(filters.Regex("^Restart Container$"), docker.restart_container_start),
-            MessageHandler(filters.Regex("^Logs$"), docker.logs_container_start),
+            MessageHandler(filters.Regex("^🛑 Stop$"), docker.stop_container_start),
+            MessageHandler(filters.Regex("^🔄 Restart$"), docker.restart_container_start),
+            MessageHandler(filters.Regex("^📜 Logs$"), docker.logs_container_start),
         ],
         states={
             docker.CONTAINER_NAME_STOP: [MessageHandler(filters.TEXT & ~filters.COMMAND, docker.stop_container)],
@@ -236,8 +236,8 @@ def build_application(settings: Settings) -> Application:
         fallbacks=[CommandHandler("cancel", docker.cancel)],
     )
     application.add_handler(conv_handler)
-    application.add_handler(MessageHandler(filters.Regex("^List Containers$"), docker.list_containers))
-    application.add_handler(MessageHandler(filters.Regex("^Back to Main Menu$"), start.start))
+    application.add_handler(MessageHandler(filters.Regex("^📋 List$"), docker.list_containers))
+    application.add_handler(MessageHandler(filters.Regex("^⬅️ Kembali$"), start.start))
 
 
     application.add_handler(MessageHandler(filters.COMMAND, unknown_command))

@@ -15,6 +15,7 @@ from ..utils.shell import ShellCommandError
 
 
 async def control_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(PROCESSING)
     settings: Settings = context.bot_data["settings"]
     statuses = await list_services(settings)
     lines = ["Status layanan whitelist (yang aman buat diutak-atik):"]
