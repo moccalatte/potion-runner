@@ -53,3 +53,34 @@ Bot akan terus dikembangkan untuk mendukung fungsionalitas server yang baru:
 *   **Pembaruan Sistem:** Bot akan memiliki fitur untuk menjadwalkan atau menjalankan `sudo apt update && sudo apt upgrade -y` secara berkala dan melaporkan hasilnya.
 *   **Pemeriksaan Kesehatan HDD:** Mengintegrasikan `smartmontools` untuk memantau status S.M.A.R.T. HDD dan mengirimkan peringatan melalui bot jika terdeteksi anomali.
 *   **Pembersihan Log:** Otomatisasi pembersihan file log lama untuk mencegah disk penuh.
+
+## Menuju Smart Server: Fitur Cerdas (Fase 4)
+
+Fase ini bertujuan untuk mengubah bot dari alat reaktif menjadi asisten server yang proaktif dan cerdas.
+
+### 1. Pemantauan Proaktif & Prediktif
+
+*   **Analisis Tren Penggunaan:** Bot akan menyimpan data historis (CPU, RAM, disk) untuk mendeteksi anomali. Misalnya, jika penggunaan RAM terus meningkat selama beberapa hari, bot akan memberi tahu admin tentang kemungkinan *memory leak* sebelum menjadi masalah.
+*   **Notifikasi Keamanan Cerdas:**
+    *   **Deteksi Upaya Login Gagal:** Memantau log otentikasi (`/var/log/auth.log`) dan mengirimkan peringatan jika ada terlalu banyak upaya login SSH yang gagal dari satu alamat IP.
+    *   **Peringatan `sudo`:** Memberi notifikasi setiap kali perintah `sudo` digunakan di luar bot, memberikan visibilitas penuh terhadap aktivitas admin di server.
+*   **Prediksi Kegagalan Disk:** Tidak hanya membaca status S.M.A.R.T. saat ini, tetapi juga menganalisis atribut-atribut kritis (seperti *Reallocated Sectors Count*) dari waktu ke waktu untuk memprediksi potensi kegagalan HDD.
+
+### 2. Otomatisasi Cerdas & Mandiri
+
+*   **Manajemen Ruang Disk Otomatis:**
+    *   **Pembersihan Cerdas:** Bot akan secara otomatis menghapus file-file yang tidak lagi relevan, seperti log lama, *cache* paket (`apt`), atau unduhan yang sudah selesai dan dipindahkan ke perpustakaan media.
+    *   **Rotasi Backup:** Menerapkan kebijakan rotasi backup otomatis (misalnya, simpan backup harian selama 7 hari, mingguan selama 4 minggu, dan bulanan selama 6 bulan) untuk menghemat ruang.
+*   **Penyembuhan Diri (*Self-Healing*):**
+    *   **Restart Layanan Otomatis:** Jika `health_check_job` mendeteksi layanan sistemd yang gagal, bot akan mencoba me-restart layanan tersebut satu atau dua kali. Jika tetap gagal, barulah notifikasi dikirim ke admin.
+*   **Integrasi Alur Kerja:**
+    *   **Otomatisasi Media:** Setelah klien unduhan (qBittorrent/JDownloader) menyelesaikan sebuah file, bot akan secara otomatis memicu pemindaian perpustakaan di Jellyfin/Plex.
+
+### 3. Diagnostik Berbantuan AI
+
+*   **Perintah `/diagnose`:**
+    *   **Target:** Membuat perintah yang dapat membantu admin mendiagnosis masalah dengan cepat.
+    *   **Implementasi (Konsep):** Saat admin menjalankan `/diagnose <service>`, bot akan:
+        1.  Mengambil log terbaru dari `journalctl` untuk layanan tersebut.
+        2.  Menganalisis log untuk mencari kata kunci error yang umum (`failed`, `error`, `timeout`).
+        3.  Menggunakan model bahasa (bisa melalui API eksternal atau model lokal yang lebih kecil) untuk merangkum masalah dan memberikan saran perbaikan berdasarkan pesan error yang ditemukan. Contoh: "Aku melihat ada error 'permission denied' di log Nginx. Coba periksa izin pada direktori `/var/www/html`."
