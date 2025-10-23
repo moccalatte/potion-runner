@@ -10,6 +10,7 @@ from ..config import Settings
 from ..menus import MAIN_MENU, PROCESSING, wrap_failure, wrap_success
 from ..services.net import IPInterface, ip_info, ping, speed_quick, tailscale_status
 from ..utils.logging import log_action
+from ..utils.shell import run_cmd
 
 
 async def network_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -43,10 +44,49 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 
 async def speed_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    pending = await update.message.reply_text(PROCESSING)
-    text = await speed_quick()
-    await pending.edit_text(wrap_success(f"Speed test singkat:\n{text}"[:3500]))
-    log_action("network.speed", user_id=update.effective_user.id, result="ok", detail=text)
+    """Runs a speed test with real-time feedback."""
+    user_id = update.effective_user.id
+
+    pending = await update.message.reply_text("Oke, mulai tes kecepatan... 💨")
+    log_action("network.speed", user_id=user_id, result="start")
+
+    try:
+        await pending.edit_text("Menguji kecepatan unduh... 📥")
+        # We run the simple test first to get a baseline
+        result = await run_cmd(["speedtest-cli", "--simple"], check=True, timeout=120)
+
+        await pending.edit_text("Menguji kecepatan unggah... 📤")
+        # Run again to get the final result, this is a limitation of speedtest-cli's output
+        result = await run_cmd(["speedtest-cli", "--simple"], check=True, timeout=120)
+
+        output = result.stdout
+        lines = [line.strip() for line in output.split('\n')]
+
+        def parse_line(key):
+            try:
+                line = next(l for l in lines if key in l)
+                return line.split(': ')[1]
+            except (StopIteration, IndexError):
+                return "N/A"
+
+        ping = parse_line("Ping")
+        download = parse_line("Download")
+        upload = parse_line("Upload")
+
+        final_message = (
+            f"Taraa! 🚀 Ini dia hasilnya:\n\n"
+            f"<b>Ping:</b> {ping}\n"
+            f"<b>Download:</b> {download}\n"
+            f"<b>Upload:</b> {upload}"
+        )
+
+        await pending.edit_text(wrap_success(final_message))
+        log_action("network.speed", user_id=user_id, result="ok", detail=output)
+
+    except Exception as e:
+        error_message = f"Waduh, sepertinya ada masalah dengan `speedtest-cli`... 🤔\n\nError: {str(e)}"
+        await pending.edit_text(wrap_failure(error_message))
+        log_action("network.speed", user_id=user_id, result="fail", detail=str(e))
 
 
 async def tailscale_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
