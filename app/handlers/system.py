@@ -22,17 +22,18 @@ async def run_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text("Usage: /run <command>")
         return
 
-    command = " ".join(context.args)
-    log_action("system.run", user_id=user_id, result="start", detail=command)
-    result = await run_cmd(command, check=False, shell=True)
+    command = context.args
+    log_action("system.run", user_id=user_id, result="start", detail=" ".join(command))
+    result = await run_cmd(command, check=False)
 
+    command_str = " ".join(command)
     if result.returncode == 0:
         output = result.stdout or "(no output)"
-        message = f"<code>$ {command}</code>\n\n<pre>{output}</pre>"
+        message = f"<code>$ {command_str}</code>\n\n<pre>{output}</pre>"
         await update.message.reply_text(wrap_success(message))
-        log_action("system.run", user_id=user_id, result="ok", detail=command)
+        log_action("system.run", user_id=user_id, result="ok", detail=command_str)
     else:
         output = result.stderr or "(no error message)"
-        message = f"<code>$ {command}</code>\n\n<pre>{output}</pre>"
+        message = f"<code>$ {command_str}</code>\n\n<pre>{output}</pre>"
         await update.message.reply_text(wrap_failure(message))
-        log_action("system.run", user_id=user_id, result="fail", detail=command)
+        log_action("system.run", user_id=user_id, result="fail", detail=command_str)

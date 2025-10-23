@@ -27,7 +27,7 @@ async def list_containers(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     log_action("docker.ps", user_id=user_id, result="start")
-    result = await run_cmd("docker ps", check=False, shell=True)
+    result = await run_cmd(["docker", "ps"], check=False)
 
     if result.returncode == 0:
         output = result.stdout or "(no output)"
