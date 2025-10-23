@@ -30,6 +30,7 @@ from .handlers import (
     monitoring,
     network,
     start,
+    system,
     updates,
 )
 from .menus import MAIN_MENU, wrap_failure, wrap_success
@@ -203,6 +204,7 @@ def build_application(settings: Settings) -> Application:
     application.add_handler(CommandHandler("svc_add", admin.service_add))
     application.add_handler(CommandHandler("svc_remove", admin.service_remove))
     application.add_handler(CommandHandler("uptime", monitoring.uptime_detail))
+    application.add_handler(CommandHandler("run", system.run_command))
 
     application.add_handler(MessageHandler(filters.Regex("^📊 Status$"), monitoring.show_status))
     application.add_handler(MessageHandler(filters.Regex("^🧰 Kontrol$"), controls.control_menu))
