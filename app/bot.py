@@ -25,6 +25,7 @@ from telegram.ext import (
 from .config import Settings, load_settings
 from .handlers import (
     admin,
+    auth,
     backup,
     controls,
     docker,
@@ -174,6 +175,10 @@ def build_application(settings: Settings) -> Application:
     )
     application.bot_data["backup_schedule"] = settings.backup_schedule
 
+    # Group -1: Pre-processing and authorization
+    application.add_handler(MessageHandler(filters.ALL, auth.guard_all), group=-1)
+
+    # Group 0: Core commands
     application.add_handler(CommandHandler("start", start.start))
     application.add_handler(CommandHandler("help", start.help_command))
     application.add_handler(CommandHandler("status", start.status_command))
@@ -244,9 +249,12 @@ def build_application(settings: Settings) -> Application:
 
 
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handles unknown commands with a touch of humor."""
     if update.message:
         await update.message.reply_text(
-            "Perintah belum dikenal. Gunakan menu tombol atau /help.", reply_markup=MAIN_MENU
+            "Waduh, perintah itu kayaknya nggak ada di buku sihirku. 🧙‍♂️\n"
+            "Coba deh, pakai tombol menu di bawah atau ketik /help buat lihat daftar mantra yang tersedia.",
+            reply_markup=MAIN_MENU
         )
 
 
