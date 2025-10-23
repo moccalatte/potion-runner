@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Update systemd timer schedule for potion runner backups."""
+"""Update systemd timer schedule for potion backups."""
 
 import argparse
 import datetime as dt
@@ -14,11 +14,11 @@ def run(cmd: list[str]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Update jadwal potion-runner-backup.timer")
+    parser = argparse.ArgumentParser(description="Update jadwal potion-backup.timer")
     parser.add_argument("--time", required=True, help="Format HH:MM (24 jam)")
     parser.add_argument(
         "--timer",
-        default="potion-runner-backup.timer",
+        default="potion-backup.timer",
         help="Nama unit timer yang akan diperbarui",
     )
     args = parser.parse_args()

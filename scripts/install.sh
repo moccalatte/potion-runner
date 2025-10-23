@@ -49,23 +49,33 @@ ensure_env "LOG_DIR" "$DATA_DIR/logs"
 ensure_env "BACKUP_DIR" "$DATA_DIR/backups"
 
 install_systemd_unit() {
-    local unit_file="$1"
+    local unit_name="$1"
+    local unit_file="${unit_name}.service"
     local exec_start="$2"
 
     echo ">>> Menginstall unit systemd: $unit_file"
     sudo cp "$APP_DIR/ops/systemd/$unit_file" "/etc/systemd/system/"
-    sudo sed -i "s|^User=.*|User=$SERVICE_USER|" "/etc/systemd/system/$unit_file"
-    sudo sed -i "s|^WorkingDirectory=.*|WorkingDirectory=$APP_DIR|" "/etc/systemd/system/$unit_file"
-    sudo sed -i "s|^ExecStart=.*|ExecStart=$exec_start|" "/etc/systemd/system/$unit_file"
+    sudo sed -i \
+        -e "s|^User=.*|User=$SERVICE_USER|" \
+        -e "s|^WorkingDirectory=.*|WorkingDirectory=$APP_DIR|" \
+        -e "s|^ExecStart=.*|ExecStart=$exec_start|" \
+        "/etc/systemd/system/$unit_file"
 }
 
-install_systemd_unit "potion-runner.service" "$APP_DIR/venv/bin/python -m app.bot"
-install_systemd_unit "potion-runner-backup.service" "$APP_DIR/venv/bin/python $APP_DIR/scripts/backup_once.py"
-install_systemd_unit "potion-runner-health.service" "$APP_DIR/venv/bin/python $APP_DIR/scripts/health_ping.py"
+install_systemd_timer() {
+    local unit_name="$1"
+    local unit_file="${unit_name}.timer"
 
-echo ">>> Menginstall timer systemd..."
-sudo cp "$APP_DIR/ops/systemd/potion-runner-backup.timer" /etc/systemd/system/
-sudo cp "$APP_DIR/ops/systemd/potion-runner-health.timer" /etc/systemd/system/
+    echo ">>> Menginstall timer systemd: $unit_file"
+    sudo cp "$APP_DIR/ops/systemd/$unit_file" "/etc/systemd/system/"
+}
+
+install_systemd_unit "potion-runner" "$APP_DIR/venv/bin/python -m app.bot"
+install_systemd_unit "potion-backup" "$APP_DIR/venv/bin/python $APP_DIR/scripts/backup_once.py"
+install_systemd_unit "potion-health" "$APP_DIR/venv/bin/python $APP_DIR/scripts/health_ping.py"
+
+install_systemd_timer "potion-backup"
+install_systemd_timer "potion-health"
 
 echo ">>> Menginstall logrotate config..."
 sudo cp "$APP_DIR/ops/logrotate/potion-runner" /etc/logrotate.d/potion-runner
@@ -73,7 +83,7 @@ sudo cp "$APP_DIR/ops/logrotate/potion-runner" /etc/logrotate.d/potion-runner
 echo ">>> Me-reload daemon systemd dan mengaktifkan service..."
 sudo systemctl daemon-reload
 sudo systemctl enable --now potion-runner.service
-sudo systemctl enable --now potion-runner-backup.timer
-sudo systemctl enable --now potion-runner-health.timer
+sudo systemctl enable --now potion-backup.timer
+sudo systemctl enable --now potion-health.timer
 
 echo ">>> Instalasi selesai. Edit $DATA_DIR/.env untuk token & admin IDs."
