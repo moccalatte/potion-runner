@@ -51,7 +51,7 @@ async def test_list_containers_authorized(run_cmd_mock, update, context):
     """Test that an authorized user can list containers."""
     run_cmd_mock.return_value = MagicMock(returncode=0, stdout="test output", stderr="")
     await list_containers(update, context)
-    update.message.reply_text.call_count == 2
+    assert update.message.reply_text.call_count == 2
 
 
 async def test_list_containers_unauthorized(update, context):
@@ -73,7 +73,7 @@ async def test_stop_container(run_cmd_mock, update, context):
     run_cmd_mock.return_value = MagicMock(returncode=0, stdout="", stderr="")
     update.message.text = "test_container"
     result = await stop_container(update, context)
-    update.message.reply_text.call_count == 2
+    assert update.message.reply_text.call_count == 2
     assert result == ConversationHandler.END
 
 async def test_restart_container_start(update, context):
@@ -88,7 +88,7 @@ async def test_restart_container(run_cmd_mock, update, context):
     run_cmd_mock.return_value = MagicMock(returncode=0, stdout="", stderr="")
     update.message.text = "test_container"
     result = await restart_container(update, context)
-    update.message.reply_text.call_count == 2
+    assert update.message.reply_text.call_count == 2
     assert result == ConversationHandler.END
 
 async def test_logs_container_start(update, context):
@@ -103,7 +103,7 @@ async def test_logs_container(run_cmd_mock, update, context):
     run_cmd_mock.return_value = MagicMock(returncode=0, stdout="test logs", stderr="")
     update.message.text = "test_container"
     result = await logs_container(update, context)
-    update.message.reply_text.call_count == 2
+    assert update.message.reply_text.call_count == 2
     assert result == ConversationHandler.END
 
 async def test_cancel(update, context):

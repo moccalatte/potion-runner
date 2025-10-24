@@ -1,86 +1,77 @@
-# Rencana Pengembangan Jangka Panjang: Server Potion
+# Rencana Aksi Strategis: Potion Server
 
-Dokumen ini menguraikan visi, rencana pemeliharaan, dan roadmap pengembangan untuk Server Potion dan Potion Runner Bot. Tujuannya adalah untuk memaksimalkan potensi server, terutama dengan memanfaatkan kapasitas HDD yang tersedia.
+Dokumen ini adalah panduan utama untuk pemeliharaan, perbaikan, dan evolusi Potion Server. Tujuannya adalah mengubah server ini menjadi platform *self-hosting* yang andal, aman, dan cerdas.
 
-## Visi Jangka Panjang
+---
 
-Menjadikan Server Potion sebagai pusat digital pribadi yang andal dan serbaguna untuk kebutuhan backup, media, dan otomatisasi tugas-tugas rutin, yang semuanya dapat dikelola dengan mudah melalui antarmuka Potion Runner Bot yang intuitif dan responsif.
+## 1. Masalah Mendesak & Perbaikan Teknis
 
-## Pemanfaatan HDD (`/mnt/dre`)
+Daftar ini berisi masalah, anomali, dan utang teknis yang harus segera ditangani untuk meningkatkan stabilitas dan kualitas kode.
 
-HDD berkapasitas 500GB adalah aset utama yang belum dimanfaatkan sepenuhnya. Berikut adalah beberapa rencana untuk menggunakannya:
+*   **Penyempurnaan Penanganan Error Global:**
+    *   **Masalah:** Saat ini, `error_handler` di `app/bot.py` hanya mencatat error ke log. Admin tidak mendapatkan notifikasi langsung jika bot mengalami *crash* atau gagal memproses permintaan.
+    *   **Solusi:** Modifikasi `error_handler` untuk mengirim pesan peringatan ke semua `ADMIN_IDS` setiap kali ada error tak terduga, lengkap dengan *traceback* singkat.
 
-1.  **Pusat Backup Terpusat:**
-    *   **Target:** Menjadikan HDD sebagai lokasi utama untuk mencadangkan data penting dari berbagai perangkat (laptop, PC, bahkan ponsel).
-    *   **Implementasi:** Menggunakan alat seperti `rsync` untuk backup file sederhana atau `restic` dan `borg` untuk backup yang lebih canggih (terenkripsi, terduplikasi, dan incremental). Proses ini akan diotomatisasi dan dapat dipicu serta dipantau melalui Potion Runner Bot.
+*   **Struktur Konfigurasi Terpusat:**
+    *   **Masalah:** Banyak string teks, emoji, dan parameter (seperti jumlah baris log untuk diambil) tersebar di dalam kode (*hardcoded*). Ini menyulitkan kustomisasi.
+    *   **Solusi:** Pindahkan semua konfigurasi yang dapat diubah pengguna (pesan bot, emoji, pengaturan fungsional) ke dalam satu file konfigurasi terpusat (misalnya, `config.toml` atau `settings.py` yang lebih terstruktur) agar mudah dimodifikasi.
 
-2.  **Server Media Pribadi:**
-    *   **Target:** Menyimpan koleksi film, musik, dan foto di HDD dan mengaksesnya dari perangkat apa pun di jaringan.
-    *   **Implementasi:** Memasang dan mengonfigurasi layanan media streaming seperti **Jellyfin** atau **Plex** menggunakan Docker. Bot akan dilengkapi fitur untuk memindai ulang perpustakaan media atau memeriksa status server.
+*   **Peningkatan Cakupan Pengujian (*Test Coverage*):**
+    *   **Masalah:** Belum ada jaminan bahwa semua fungsionalitas kritis (terutama yang menjalankan perintah shell seperti `systemctl` dan `apt`) teruji dengan baik.
+    *   **Solusi:** Implementasikan `pytest-cov` untuk mengukur cakupan pengujian. Tulis tes tambahan untuk setiap fungsi di `app/services` dan `app/handlers` yang belum teruji, terutama untuk skenario sukses dan gagal.
 
-3.  **Platform Download Otomatis:**
-    *   **Target:** Mengelola unduhan file besar langsung ke server tanpa perlu menyalakan PC/laptop terus-menerus.
-    *   **Implementasi:** Menjalankan aplikasi seperti **qBittorrent (dengan web UI)** atau **JDownloader** di dalam kontainer Docker, dengan direktori unduhan diarahkan ke HDD. Bot bisa digunakan untuk memantau kemajuan unduhan atau menambahkan file torrent baru.
+*   **Mekanisme Umpan Balik yang Konsisten:**
+    *   **Masalah:** Pesan "sedang diproses" telah ditambahkan secara manual ke beberapa *handler*, tetapi belum konsisten.
+    *   **Solusi:** Buat *decorator* Python (`@send_processing_message`) yang bisa diterapkan pada fungsi *handler* mana pun untuk secara otomatis mengirim pesan "sedang diproses" di awal dan menghapusnya di akhir.
 
-## Roadmap Pengembangan Potion Runner Bot
+---
 
-Bot akan terus dikembangkan untuk mendukung fungsionalitas server yang baru:
+## 2. Roadmap Fitur & Peningkatan Server
 
-### Fase 1: Fondasi dan Perbaikan (Prioritas Saat Ini)
+Daftar ide dan fitur baru untuk memaksimalkan kegunaan server, diurutkan berdasarkan area fungsional.
 
-*   [x] **Perbaikan Bug:** Menyelesaikan masalah pada perintah `/speed` yang macet.
-*   [x] **Peningkatan UI/UX:** Mengimplementasikan pesan yang lebih kasual, emoji, dan umpan balik instan pada setiap interaksi menu.
-*   **Konfigurasi Dasar HDD:** Memastikan HDD terpasang (`mount`) secara permanen dan dapat diakses dengan benar oleh sistem.
-*   **Monitoring HDD:** Menambahkan fitur pada menu "📊 Status" untuk menampilkan penggunaan ruang disk pada partisi `/mnt/dre`.
+### Area Inti: Keamanan & Pemeliharaan
 
-### Fase 2: Backup dan Media
+*   **Menu 🛡️ Keamanan:**
+    *   **Pemantau Log Otentikasi:** Tampilkan ringkasan upaya login SSH (berhasil dan gagal) dari `/var/log/auth.log`.
+    *   **Manajemen `fail2ban`:** Integrasikan perintah untuk melihat status, daftar IP yang diblokir, dan membuka blokir IP langsung dari bot.
+    *   **Pindai Port Terbuka:** Jalankan `nmap` atau `ss` dari bot untuk memeriksa port mana yang terbuka ke internet.
 
-*   **Integrasi Backup:** Membuat menu baru "🛡️ Backup Lanjutan" di bot untuk mengelola tugas-tugas `restic` atau `rsync`. Fitur akan mencakup: memulai backup, melihat daftar snapshot, dan memulihkan file.
-*   **Instalasi Media Server:** Memasang Jellyfin atau Plex via Docker.
-*   **Kontrol Media Server:** Menambahkan perintah di dalam menu "🐳 Docker" untuk memulai ulang atau memeriksa status kontainer media server.
+*   **Otomatisasi Pemeliharaan Cerdas:**
+    *   **Pembersihan Otomatis:** Jadwalkan tugas pembersihan mingguan untuk menghapus *cache* `apt`, *thumbnail* lama, dan log yang sudah dirotasi.
+    *   **Rotasi & Arsip Backup:** Terapkan kebijakan rotasi backup otomatis (harian, mingguan, bulanan) dan pindahkan backup bulanan yang sangat lama ke penyimpanan arsip (jika ada).
+    *   ***Self-Healing* untuk Layanan:** Jika layanan penting (misalnya, `nginx` atau `docker.service`) mati, bot akan mencoba me-restartnya secara otomatis sebelum memberi tahu admin.
 
-### Fase 3: Otomatisasi dan Lanjutan
+### Area Produktivitas: Pemanfaatan HDD
 
-*   **Integrasi Klien Download:** Menambahkan kontrol dasar untuk qBittorrent atau JDownloader melalui bot.
-*   **Notifikasi Cerdas:** Mengembangkan sistem notifikasi yang lebih proaktif. Contoh:
-    *   Memberi tahu admin jika backup gagal.
-    *   Memberi tahu saat unduhan selesai.
-    *   Memberi peringatan jika kesehatan HDD (berdasarkan S.M.A.R.T.) menurun.
-*   **Keamanan:** Mengkaji ulang dan memperkuat keamanan, terutama pada fitur `/run` yang mengeksekusi perintah shell langsung.
+*   **Menu 🗃️ Manajemen File:**
+    *   **File Browser Sederhana:** Fitur untuk melihat daftar file dan direktori di `/mnt/dre`, menghitung ukuran folder, dan menghapus file/folder.
+    *   **Transfer File:** Unggah file dari Telegram langsung ke server, atau sebaliknya, minta bot mengirimkan file dari server.
 
-## Pemeliharaan Rutin
+*   **Menu 🚀 Pusat Unduhan (*Download Hub*):**
+    *   **Integrasi qBittorrent/Transmission:** Tambahkan, jeda, lanjutkan, dan lihat status unduhan *torrent* melalui bot. Dapatkan notifikasi saat unduhan selesai.
+    *   **Manajemen `yt-dlp`:** Perintah untuk mengunduh video dari YouTube dan platform lain langsung ke server.
 
-*   **Pembaruan Sistem:** Bot akan memiliki fitur untuk menjadwalkan atau menjalankan `sudo apt update && sudo apt upgrade -y` secara berkala dan melaporkan hasilnya.
-*   **Pemeriksaan Kesehatan HDD:** Mengintegrasikan `smartmontools` untuk memantau status S.M.A.R.T. HDD dan mengirimkan peringatan melalui bot jika terdeteksi anomali.
-*   **Pembersihan Log:** Otomatisasi pembersihan file log lama untuk mencegah disk penuh.
+*   **Menu 🎬 Server Media:**
+    *   **Integrasi Jellyfin/Plex:**
+        *   Lihat item yang baru ditambahkan.
+        *   Mulai pemindaian perpustakaan secara manual.
+        *   Dapatkan statistik penggunaan (misalnya, siapa yang sedang menonton apa).
+    *   **Otomatisasi Perpustakaan:** Secara otomatis memicu pemindaian perpustakaan media setelah unduhan baru selesai di Pusat Unduhan.
 
-## Menuju Smart Server: Fitur Cerdas (Fase 4)
+### Area Jaringan & Konektivitas
 
-Fase ini bertujuan untuk mengubah bot dari alat reaktif menjadi asisten server yang proaktif dan cerdas.
+*   **Menu 🌐 Jaringan (Lanjutan):**
+    *   **Manajemen Tailscale:**
+        *   Lihat daftar perangkat (*peers*) di jaringan Tailnet.
+        *   Aktifkan/nonaktifkan koneksi Tailscale.
+    *   **Visualisasi Lalu Lintas Jaringan:** Gunakan `nload` atau `iftop` untuk menghasilkan gambar atau teks ringkasan tentang penggunaan *bandwidth* saat ini.
+    *   **Bookmark Cepat:** Simpan daftar alamat IP/domain yang sering di-*ping* agar bisa diakses dengan cepat.
 
-### 1. Pemantauan Proaktif & Prediktif
+### Fitur "Smart" & Eksperimental
 
-*   **Analisis Tren Penggunaan:** Bot akan menyimpan data historis (CPU, RAM, disk) untuk mendeteksi anomali. Misalnya, jika penggunaan RAM terus meningkat selama beberapa hari, bot akan memberi tahu admin tentang kemungkinan *memory leak* sebelum menjadi masalah.
-*   **Notifikasi Keamanan Cerdas:**
-    *   **Deteksi Upaya Login Gagal:** Memantau log otentikasi (`/var/log/auth.log`) dan mengirimkan peringatan jika ada terlalu banyak upaya login SSH yang gagal dari satu alamat IP.
-    *   **Peringatan `sudo`:** Memberi notifikasi setiap kali perintah `sudo` digunakan di luar bot, memberikan visibilitas penuh terhadap aktivitas admin di server.
-*   **Prediksi Kegagalan Disk:** Tidak hanya membaca status S.M.A.R.T. saat ini, tetapi juga menganalisis atribut-atribut kritis (seperti *Reallocated Sectors Count*) dari waktu ke waktu untuk memprediksi potensi kegagalan HDD.
-
-### 2. Otomatisasi Cerdas & Mandiri
-
-*   **Manajemen Ruang Disk Otomatis:**
-    *   **Pembersihan Cerdas:** Bot akan secara otomatis menghapus file-file yang tidak lagi relevan, seperti log lama, *cache* paket (`apt`), atau unduhan yang sudah selesai dan dipindahkan ke perpustakaan media.
-    *   **Rotasi Backup:** Menerapkan kebijakan rotasi backup otomatis (misalnya, simpan backup harian selama 7 hari, mingguan selama 4 minggu, dan bulanan selama 6 bulan) untuk menghemat ruang.
-*   **Penyembuhan Diri (*Self-Healing*):**
-    *   **Restart Layanan Otomatis:** Jika `health_check_job` mendeteksi layanan sistemd yang gagal, bot akan mencoba me-restart layanan tersebut satu atau dua kali. Jika tetap gagal, barulah notifikasi dikirim ke admin.
-*   **Integrasi Alur Kerja:**
-    *   **Otomatisasi Media:** Setelah klien unduhan (qBittorrent/JDownloader) menyelesaikan sebuah file, bot akan secara otomatis memicu pemindaian perpustakaan di Jellyfin/Plex.
-
-### 3. Diagnostik Berbantuan AI
-
-*   **Perintah `/diagnose`:**
-    *   **Target:** Membuat perintah yang dapat membantu admin mendiagnosis masalah dengan cepat.
-    *   **Implementasi (Konsep):** Saat admin menjalankan `/diagnose <service>`, bot akan:
-        1.  Mengambil log terbaru dari `journalctl` untuk layanan tersebut.
-        2.  Menganalisis log untuk mencari kata kunci error yang umum (`failed`, `error`, `timeout`).
-        3.  Menggunakan model bahasa (bisa melalui API eksternal atau model lokal yang lebih kecil) untuk merangkum masalah dan memberikan saran perbaikan berdasarkan pesan error yang ditemukan. Contoh: "Aku melihat ada error 'permission denied' di log Nginx. Coba periksa izin pada direktori `/var/www/html`."
+*   **Asisten Diagnostik `/diagnose`:**
+    *   **Fungsi:** Ketika sebuah layanan gagal, admin bisa menjalankan `/diagnose <nama_layanan>`.
+    *   **Cara Kerja:** Bot akan mengambil log error relevan dari `journalctl`, mengidentifikasi pesan kunci, dan (menggunakan bantuan model AI sederhana) memberikan ringkasan masalah dan saran perbaikan yang mungkin.
+*   **Laporan Mingguan:** Setiap hari Senin, bot akan mengirimkan ringkasan kinerja server selama seminggu terakhir: rata-rata penggunaan CPU/RAM, total data yang diunduh/diunggah, dan ringkasan backup.
+*   **Manajemen *Dotfiles* & Konfigurasi:** Menu untuk mengelola file konfigurasi penting (misalnya, `.bashrc`, `.profile`, konfigurasi Nginx) dengan kemampuan untuk melihat, mengedit, dan memulihkan dari *backup* Git.
