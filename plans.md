@@ -1,77 +1,84 @@
-# Rencana Aksi Strategis: Potion Server
+# Rencana Pengembangan: "Project Cockpit"
 
-Dokumen ini adalah panduan utama untuk pemeliharaan, perbaikan, dan evolusi Potion Server. Tujuannya adalah mengubah server ini menjadi platform *self-hosting* yang andal, aman, dan cerdas.
-
----
-
-## 1. Masalah Mendesak & Perbaikan Teknis
-
-Daftar ini berisi masalah, anomali, dan utang teknis yang harus segera ditangani untuk meningkatkan stabilitas dan kualitas kode.
-
-*   **Penyempurnaan Penanganan Error Global:**
-    *   **Masalah:** Saat ini, `error_handler` di `app/bot.py` hanya mencatat error ke log. Admin tidak mendapatkan notifikasi langsung jika bot mengalami *crash* atau gagal memproses permintaan.
-    *   **Solusi:** Modifikasi `error_handler` untuk mengirim pesan peringatan ke semua `ADMIN_IDS` setiap kali ada error tak terduga, lengkap dengan *traceback* singkat.
-
-*   **Struktur Konfigurasi Terpusat:**
-    *   **Masalah:** Banyak string teks, emoji, dan parameter (seperti jumlah baris log untuk diambil) tersebar di dalam kode (*hardcoded*). Ini menyulitkan kustomisasi.
-    *   **Solusi:** Pindahkan semua konfigurasi yang dapat diubah pengguna (pesan bot, emoji, pengaturan fungsional) ke dalam satu file konfigurasi terpusat (misalnya, `config.toml` atau `settings.py` yang lebih terstruktur) agar mudah dimodifikasi.
-
-*   **Peningkatan Cakupan Pengujian (*Test Coverage*):**
-    *   **Masalah:** Belum ada jaminan bahwa semua fungsionalitas kritis (terutama yang menjalankan perintah shell seperti `systemctl` dan `apt`) teruji dengan baik.
-    *   **Solusi:** Implementasikan `pytest-cov` untuk mengukur cakupan pengujian. Tulis tes tambahan untuk setiap fungsi di `app/services` dan `app/handlers` yang belum teruji, terutama untuk skenario sukses dan gagal.
-
-*   **Mekanisme Umpan Balik yang Konsisten:**
-    *   **Masalah:** Pesan "sedang diproses" telah ditambahkan secara manual ke beberapa *handler*, tetapi belum konsisten.
-    *   **Solusi:** Buat *decorator* Python (`@send_processing_message`) yang bisa diterapkan pada fungsi *handler* mana pun untuk secara otomatis mengirim pesan "sedang diproses" di awal dan menghapusnya di akhir.
+Dokumen ini adalah cetak biru untuk mengubah Potion Runner Bot menjadi **"Cockpit"**, sebuah panel kontrol terpusat yang intuitif dan kuat untuk mengelola semua aspek Server Potion. Setiap fitur dirancang sebagai instrumen, tombol, atau layar informasi di dalam kokpit virtual ini.
 
 ---
 
-## 2. Roadmap Fitur & Peningkatan Server
+## Visi Utama: Server sebagai Pesawat Luar Angkasa
 
-Daftar ide dan fitur baru untuk memaksimalkan kegunaan server, diurutkan berdasarkan area fungsional.
+Kita akan memperlakukan server bukan lagi sebagai mesin statis, tetapi sebagai "pesawat" pribadi yang kita piloti. Bot adalah kokpit kita. Ini berarti setiap interaksi harus:
+*   **Informatif:** Memberikan data yang jelas dan relevan dengan cepat.
+*   **Responsif:** Memberikan kendali instan atas semua sistem kritis.
+*   **Cerdas:** Membantu pilot (admin) membuat keputusan yang lebih baik dan mengotomatiskan tugas-tugas rutin.
 
-### Area Inti: Keamanan & Pemeliharaan
+---
 
-*   **Menu 🛡️ Keamanan:**
-    *   **Pemantau Log Otentikasi:** Tampilkan ringkasan upaya login SSH (berhasil dan gagal) dari `/var/log/auth.log`.
-    *   **Manajemen `fail2ban`:** Integrasikan perintah untuk melihat status, daftar IP yang diblokir, dan membuka blokir IP langsung dari bot.
-    *   **Pindai Port Terbuka:** Jalankan `nmap` atau `ss` dari bot untuk memeriksa port mana yang terbuka ke internet.
+## Struktur Panel Kontrol "Cockpit"
 
-*   **Otomatisasi Pemeliharaan Cerdas:**
-    *   **Pembersihan Otomatis:** Jadwalkan tugas pembersihan mingguan untuk menghapus *cache* `apt`, *thumbnail* lama, dan log yang sudah dirotasi.
-    *   **Rotasi & Arsip Backup:** Terapkan kebijakan rotasi backup otomatis (harian, mingguan, bulanan) dan pindahkan backup bulanan yang sangat lama ke penyimpanan arsip (jika ada).
-    *   ***Self-Healing* untuk Layanan:** Jika layanan penting (misalnya, `nginx` atau `docker.service`) mati, bot akan mencoba me-restartnya secara otomatis sebelum memberi tahu admin.
+Menu utama bot akan menjadi *dashboard* untuk mengakses panel-panel berikut:
 
-### Area Produktivitas: Pemanfaatan HDD
+### 🚀 Panel Utama (Dashboard Utama)
 
-*   **Menu 🗃️ Manajemen File:**
-    *   **File Browser Sederhana:** Fitur untuk melihat daftar file dan direktori di `/mnt/dre`, menghitung ukuran folder, dan menghapus file/folder.
-    *   **Transfer File:** Unggah file dari Telegram langsung ke server, atau sebaliknya, minta bot mengirimkan file dari server.
+Tampilan awal yang menunjukkan status paling kritis secara sekilas (misalnya, status sistem OK/Peringatan, penggunaan disk, beban CPU) dan menyediakan akses ke panel-panel lainnya.
 
-*   **Menu 🚀 Pusat Unduhan (*Download Hub*):**
-    *   **Integrasi qBittorrent/Transmission:** Tambahkan, jeda, lanjutkan, dan lihat status unduhan *torrent* melalui bot. Dapatkan notifikasi saat unduhan selesai.
-    *   **Manajemen `yt-dlp`:** Perintah untuk mengunduh video dari YouTube dan platform lain langsung ke server.
+### ⚙️ Panel Mesin (Engine Room) - *Kesehatan & Performa Inti*
 
-*   **Menu 🎬 Server Media:**
-    *   **Integrasi Jellyfin/Plex:**
-        *   Lihat item yang baru ditambahkan.
-        *   Mulai pemindaian perpustakaan secara manual.
-        *   Dapatkan statistik penggunaan (misalnya, siapa yang sedang menonton apa).
-    *   **Otomatisasi Perpustakaan:** Secara otomatis memicu pemindaian perpustakaan media setelah unduhan baru selesai di Pusat Unduhan.
+*   **Layar Status Sistem:**
+    *   **Metrik Real-time:** Tampilan detail CPU (beban, suhu), RAM (terpakai, *cache*, tersedia), dan penggunaan *swap*.
+    *   **Kesehatan Disk:** Penggunaan ruang disk untuk partisi `/` dan `/mnt/dre`. Integrasi `smartmontools` untuk menampilkan status kesehatan S.M.A.R.T.
+    *   **Uptime & Waktu Boot:** Informasi uptime server.
+*   **Kontrol Layanan (`systemctl`):**
+    *   Daftar layanan yang dipantau dengan indikator status (aktif/tidak aktif/gagal).
+    *   Tombol cepat untuk `start`, `stop`, `restart` layanan dari daftar.
+    *   Akses cepat untuk melihat log `journalctl` dari layanan yang gagal.
+*   **Manajemen Proses:**
+    *   Tampilkan daftar proses yang paling banyak memakan CPU/RAM (mirip `htop`).
+    *   Fungsi untuk "membunuh" (*kill*) proses berdasarkan PID.
 
-### Area Jaringan & Konektivitas
+### 📦 Panel Kargo (Cargo Bay) - *Aplikasi & Data*
 
-*   **Menu 🌐 Jaringan (Lanjutan):**
-    *   **Manajemen Tailscale:**
-        *   Lihat daftar perangkat (*peers*) di jaringan Tailnet.
-        *   Aktifkan/nonaktifkan koneksi Tailscale.
-    *   **Visualisasi Lalu Lintas Jaringan:** Gunakan `nload` atau `iftop` untuk menghasilkan gambar atau teks ringkasan tentang penggunaan *bandwidth* saat ini.
-    *   **Bookmark Cepat:** Simpan daftar alamat IP/domain yang sering di-*ping* agar bisa diakses dengan cepat.
+*   **Kontrol Kontainer 🐳 (Docker):**
+    *   Daftar kontainer dengan status, port, dan penggunaan sumber daya.
+    *   Kontrol penuh: `start`, `stop`, `restart`, `pause`, `unpause`.
+    *   Lihat log kontainer secara *real-time*.
+    *   Informasi volume dan jaringan yang terhubung.
+*   **Manajemen Penyimpanan 🗃️:**
+    *   **File Browser:** Navigasi direktori di `/mnt/dre`, lihat ukuran file/folder, hapus, dan pindahkan.
+    *   **Transfer File:** Unggah/unduh file antara Telegram dan server.
+    *   **Analisis Penggunaan Disk:** Visualisasi penggunaan disk untuk melihat folder mana yang paling banyak memakan ruang.
+*   **Sistem Backup & Pemulihan 💾:**
+    *   **Backup (Restic/Borg):** Jalankan backup manual, lihat daftar *snapshot*, dan verifikasi integritas data.
+    *   **Pemulihan Bencana:** Fitur untuk memulihkan file atau direktori tertentu dari *snapshot* backup.
 
-### Fitur "Smart" & Eksperimental
+### 📡 Panel Navigasi & Komunikasi (Navigation & Comms) - *Jaringan & Keamanan*
 
-*   **Asisten Diagnostik `/diagnose`:**
-    *   **Fungsi:** Ketika sebuah layanan gagal, admin bisa menjalankan `/diagnose <nama_layanan>`.
-    *   **Cara Kerja:** Bot akan mengambil log error relevan dari `journalctl`, mengidentifikasi pesan kunci, dan (menggunakan bantuan model AI sederhana) memberikan ringkasan masalah dan saran perbaikan yang mungkin.
-*   **Laporan Mingguan:** Setiap hari Senin, bot akan mengirimkan ringkasan kinerja server selama seminggu terakhir: rata-rata penggunaan CPU/RAM, total data yang diunduh/diunggah, dan ringkasan backup.
-*   **Manajemen *Dotfiles* & Konfigurasi:** Menu untuk mengelola file konfigurasi penting (misalnya, `.bashrc`, `.profile`, konfigurasi Nginx) dengan kemampuan untuk melihat, mengedit, dan memulihkan dari *backup* Git.
+*   **Layar Jaringan:**
+    *   **Status Konektivitas:** Hasil `ping` ke target-target penting (misalnya, gateway, 8.8.8.8).
+    *   **Tes Kecepatan Internet:** Perintah `/speed` yang andal.
+    *   **Lalu Lintas Jaringan:** Tampilkan penggunaan *bandwidth* saat ini (mirip `nload`).
+*   **Sistem Keamanan:**
+    *   **Firewall (`ufw`/`iptables`):** Lihat aturan firewall yang aktif, buka/tutup port sementara.
+    *   **Log Keamanan:** Pantau `/var/log/auth.log` untuk upaya login yang gagal dan tampilkan peringatan.
+    *   **Integrasi Fail2Ban:** Lihat daftar IP yang diblokir dan buka blokir.
+*   **Manajemen VPN (Tailscale):**
+    *   Daftar perangkat di jaringan Tailnet.
+    *   Status konektivitas setiap perangkat.
+
+### 🛠️ Panel Pengaturan & Log Penerbangan (Settings & Flight Recorder)
+
+*   **Pengaturan Bot:**
+    *   **Manajemen Admin:** Tambah/hapus ID admin.
+    *   **Kustomisasi Notifikasi:** Atur ambang batas untuk peringatan (CPU > 90%, disk > 85%).
+    *   **Jadwal Otomatis:** Atur jadwal untuk backup otomatis dan pembersihan.
+*   **Pencatatan & Audit (Log):**
+    *   Akses mudah ke log sistem, log aplikasi, dan log bot itu sendiri.
+    *   Fitur pencarian di dalam log.
+
+### ✨ Co-Pilot Cerdas (Fitur Otomatis & Proaktif)
+
+Ini bukan menu, melainkan serangkaian fitur "di balik layar" yang membuat kokpit ini cerdas.
+
+*   **Peringatan Prediktif:** Analisis tren penggunaan sumber daya untuk memperingatkan potensi masalah (*memory leak*, disk penuh) sebelum terjadi.
+*   **Penyembuhan Diri (*Self-Healing*):** Jika layanan penting gagal, bot akan mencoba me-restartnya secara otomatis. Jika gagal lagi, barulah pilot diberi tahu.
+*   **Laporan Misi Mingguan:** Ringkasan otomatis setiap minggu tentang kesehatan server, backup yang berhasil, dan anomali yang terdeteksi.
+*   **Asisten Diagnostik `/diagnose`:** Membantu pilot menganalisis log error dan memberikan saran perbaikan.
